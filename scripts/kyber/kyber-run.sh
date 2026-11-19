@@ -91,17 +91,35 @@ export KYBER_LOG_LEVEL="$(trim "${AMP_KYBER_LOG_LEVEL:-info}")"
 
 unset KYBER_MOD_FOLDER KYBER_SERVER_PLUGINS_PATH
 if is_true "${AMP_KYBER_USE_MODS:-}"; then
-  # kyber_cli reads the launcher's exported collection (.tar) straight from
-  # KYBER_MOD_FOLDER, so the folder only needs to hold that one .tar.
-  MODS="$BASE/mods"; mkdir -p "$MODS"
+  # Upload the launcher's exported collection (.tar) into mods/. kyber_cli needs
+  # a folder holding the collection file (.fbcollection/.kbcollection) and its
+  # mods, so the .tar is unpacked into mods-unpacked/ (again only when it changes)
+  # and KYBER_MOD_FOLDER points there. mods/ itself keeps just the .tar.
+  MODS="$BASE/mods"; UNPACKED="$BASE/mods-unpacked"; mkdir -p "$MODS"
   shopt -s nullglob nocaseglob; tars=("$MODS"/*.tar); shopt -u nullglob nocaseglob
-  if [ "${#tars[@]}" -eq 1 ]; then
-    export KYBER_MOD_FOLDER="$MODS"
-    log "Mod folder: $KYBER_MOD_FOLDER (collection $(basename "${tars[0]}"), $(du -h "${tars[0]}" 2>/dev/null | cut -f1))"
-  elif [ "${#tars[@]}" -gt 1 ]; then
+  if [ "${#tars[@]}" -gt 1 ]; then
     fail "the mods folder holds more than one .tar: $(printf '%s ' "${tars[@]##*/}"). Keep only the collection you want to load."
-  else
+  elif [ "${#tars[@]}" -eq 0 ]; then
     warn "Mods are enabled but there is no .tar in $MODS. In the KYBER launcher use Play > Export Collection (tar) and upload the .tar into the mods folder."
+  else
+    tarfile="${tars[0]}"
+    stamp="$(basename "$tarfile") $(stat -c '%s %Y' "$tarfile" 2>/dev/null)"
+    if [ "$(cat "$UNPACKED/.source" 2>/dev/null)" != "$stamp" ]; then
+      log "Unpacking $(basename "$tarfile") into mods-unpacked/ ..."
+      rm -rf "$UNPACKED"; mkdir -p "$UNPACKED"
+      tar -xf "$tarfile" -C "$UNPACKED" --no-same-owner || fail "could not unpack $(basename "$tarfile")."
+      printf '%s' "$stamp" > "$UNPACKED/.source"
+    fi
+    mapfile -t collections < <(find "$UNPACKED" -maxdepth 3 -type f \( -iname '*.fbcollection' -o -iname '*.kbcollection' \) 2>/dev/null)
+    if [ "${#collections[@]}" -eq 1 ]; then
+      export KYBER_MOD_FOLDER="$(dirname "${collections[0]}")"
+      coll="$(basename "${collections[0]}")"
+      log "Mod collection: ${coll%.*} from $(basename "$tarfile") (mod folder $KYBER_MOD_FOLDER)"
+    elif [ "${#collections[@]}" -gt 1 ]; then
+      fail "$(basename "$tarfile") contains more than one collection file: $(printf '%s ' "${collections[@]##*/}")"
+    else
+      fail "$(basename "$tarfile") has no .fbcollection or .kbcollection file. Export it again from the KYBER launcher (Play > Export Collection (tar))."
+    fi
   fi
 else
   log "Mod collection disabled (Load Mod Collection = '${AMP_KYBER_USE_MODS:-}')."
