@@ -107,8 +107,38 @@ fi
 # ---------------------------------------------------------------- Game files
 if [ -n "$EA_TOKEN" ]; then
   log "Downloading / verifying Star Wars Battlefront II into $GAME_DIR (about 90 GB on first install) ..."
+  # kyber_cli download_game does not exit on its own once it reaches 100%, and it
+  # redraws a progress spinner every 0.2s. Run it in the background, show every
+  # 5% step, and close it ourselves shortly after it reports 100%.
+  DL_LOG="$TMP/download.log"; : > "$DL_LOG"
   ( cd "$RUNTIME/opt/kyber" && KYBER_BYPASS_DOCKER_I_REALLY_KNOW_WHAT_I_AM_DOING=1 \
-      ./kyber_cli download_game -p "$GAME_DIR" -t "$EA_TOKEN" ) \
+      exec ./kyber_cli download_game -p "$GAME_DIR" -t "$EA_TOKEN" ) >"$DL_LOG" 2>&1 &
+  dl_pid=$!
+  tail -n +1 -f --pid="$dl_pid" "$DL_LOG" | tr '\r' '\n' | awk '
+      match($0, /\(([0-9]+)(\.[0-9]+)?%\)/) {
+        p = int(substr($0, RSTART + 1, RLENGTH - 3) / 5) * 5
+        if (p != last) { last = p; print "[KYBER] Downloading game... " p "%"; fflush() }
+        next
+      }
+      NF { print; fflush() }' &
+  show_pid=$!
+  done_at=0
+  while kill -0 "$dl_pid" 2>/dev/null; do
+    sleep 2
+    if [ "$done_at" = 0 ] && tr '\r' '\n' < "$DL_LOG" | grep -aqE '\(100(\.0+)?%\)'; then
+      done_at=$SECONDS
+      log "Download reached 100%. Waiting up to 30s for kyber_cli to finish ..."
+    fi
+    if [ "$done_at" != 0 ] && [ $((SECONDS - done_at)) -ge 30 ]; then
+      log "kyber_cli is still open after finishing; closing it."
+      kill "$dl_pid" 2>/dev/null; sleep 5; kill -9 "$dl_pid" 2>/dev/null
+      break
+    fi
+  done
+  wait "$dl_pid" 2>/dev/null; dl_rc=$?
+  wait "$show_pid" 2>/dev/null
+  [ "$done_at" != 0 ] && dl_rc=0
+  [ "$dl_rc" -eq 0 ] \
     || fail "game download failed. EA tokens expire quickly - create a fresh one with 'kyber_cli get_ea_token' and update again."
   log "Game download finished. You can clear the EA token setting now."
 elif ls "$GAME_DIR" 2>/dev/null | grep -qi '^starwarsbattlefrontii\.exe$'; then
