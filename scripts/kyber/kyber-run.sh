@@ -37,6 +37,23 @@ EA_TOKEN="$(trim "${AMP_KYBER_EA_TOKEN:-}")"
 TOKEN="$(trim "${AMP_KYBER_TOKEN:-}")"
 [ -n "$TOKEN" ] || fail "Set the KYBER token (Kyber > Accounts). Create one with 'kyber_cli get_token'."
 
+# Everything this script and its children print reaches the AMP console, and
+# kyber_cli --verbose (Log Level debug/trace) echoes its arguments. Replace the
+# EA login and tokens with **** on the way out. The filter ignores AMP's stop
+# signals so it can still pass on the shutdown messages; it ends at EOF.
+export KYBER_CENSOR="$(printf '%s\n' "$EA_PASS" "$TOKEN" "$EA_TOKEN" "$EA_USER")"
+exec > >(trap '' INT TERM HUP; exec awk '
+  BEGIN { n = split(ENVIRON["KYBER_CENSOR"], secret, "\n") }
+  {
+    for (i = 1; i <= n; i++)
+      if (length(secret[i]) >= 4)
+        while ((p = index($0, secret[i])) > 0)
+          $0 = substr($0, 1, p - 1) "****" substr($0, p + length(secret[i]))
+    print; fflush()
+  }') 2>&1
+CENSOR_PID=$!
+unset KYBER_CENSOR
+
 # ---------- server info ----------
 NAME="$(trim "${AMP_KYBER_SERVER_NAME:-}")"; [ -n "$NAME" ] || fail "Set a server name."
 if [ "${#NAME}" -gt 24 ]; then warn "Server name is longer than 24 characters; truncating."; NAME="$(trim "${NAME:0:24}")"; fi
@@ -200,7 +217,7 @@ args=(./kyber_cli start_server --show-console
       --credentials="$EA_USER:$EA_PASS"
       --token "$TOKEN"
       --game-path "$GAME_EXE")
-# --verbose echoes every argument, EA password and KYBER token included, so only use it when asked.
+# --verbose echoes every argument; the console filter above hides the EA login and tokens.
 case "$KYBER_LOG_LEVEL" in debug|trace) args+=(--verbose) ;; esac
 is_true "${AMP_KYBER_MAXIMA_DEBUG:-}" && args+=(--debug)
 
@@ -279,4 +296,5 @@ if game_running; then
   log "Closing the game ..."
   close_game || warn "the game did not close. Use Stop, wait for Stopped, then Start."
 fi
+exec >&- 2>&-; wait "$CENSOR_PID" 2>/dev/null   # let the console filter print its last lines
 exit "$rc"

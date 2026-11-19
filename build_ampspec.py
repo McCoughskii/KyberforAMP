@@ -11,7 +11,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "20"
+CONFIG_VERSION = "22"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -134,7 +134,7 @@ setting("ModuleChannel", "advanced", "KYBER Module Channel", "Release channel of
         enum={"default": "Default", "stable": "stable", "custom": "Custom (set below)"})
 setting("ModuleChannelCustom", "advanced", "Custom Module Channel", "Used when the channel above is Custom, e.g. `ver/beta10`.",
         env_name="AMP_KYBER_MODULE_CHANNEL_CUSTOM", keywords="module,channel,version", Placeholder="ver/beta10")
-setting("LogLevel", "advanced", "Log Level", "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose, which prints your EA password and KYBER token in the console.",
+setting("LogLevel", "advanced", "Log Level", "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose. The EA login and tokens are replaced with **** in the console.",
         itype="enum", default="info", env_name="AMP_KYBER_LOG_LEVEL", keywords="log,debug,trace",
         enum={"info": "info", "debug": "debug", "trace": "trace"})
 setting("MaximaDebug", "advanced", "Maxima Debug Output", "Adds --debug to kyber_cli for troubleshooting EA login problems.",
