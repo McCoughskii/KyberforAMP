@@ -12,6 +12,9 @@ log()  { echo "[KYBER] $*"; }
 warn() { echo "[KYBER] WARNING: $*"; }
 fail() { echo "[KYBER] ERROR: $*"; exit 1; }
 trim() { local s="$1"; s="${s#"${s%%[![:space:]]*}"}"; s="${s%"${s##*[![:space:]]}"}"; printf '%s' "$s"; }
+# AMP checkboxes do not arrive as a plain "true": depending on the AMP version the
+# value is "True", the EnumValues entry ("setting.X.value.True") or its label.
+is_true() { case "$(trim "${1:-}" | tr '[:upper:]' '[:lower:]')" in true|1|yes|on|enabled|*.true) return 0 ;; *) return 1 ;; esac; }
 
 RUNTIME="$BASE/runtime/opt/kyber"
 WINE="$BASE/wine/bin/wine64"
@@ -81,7 +84,7 @@ if [ -n "$CHANNEL" ] && [ "$CHANNEL" != "default" ]; then export KYBER_MODULE_CH
 export KYBER_LOG_LEVEL="$(trim "${AMP_KYBER_LOG_LEVEL:-info}")"
 
 unset KYBER_MOD_FOLDER KYBER_SERVER_PLUGINS_PATH
-if [ "${AMP_KYBER_USE_MODS:-false}" = "true" ]; then
+if is_true "${AMP_KYBER_USE_MODS:-}"; then
   MODS="$BASE/mods"; mkdir -p "$MODS"
   # An uploaded launcher export (.tar/.tar.gz/.tgz/.zip) in mods/ replaces the
   # current collection: unpack it, keep the old one in mods-previous/.
@@ -111,8 +114,10 @@ if [ "${AMP_KYBER_USE_MODS:-false}" = "true" ]; then
   else
     warn "Mods are enabled but no collection was found. In the KYBER launcher use Play > Export Collection (tar) and upload the .tar into the mods folder."
   fi
+else
+  log "Mod collection disabled (Load Mod Collection = '${AMP_KYBER_USE_MODS:-}')."
 fi
-if [ "${AMP_KYBER_USE_PLUGINS:-false}" = "true" ]; then
+if is_true "${AMP_KYBER_USE_PLUGINS:-}"; then
   mkdir -p "$BASE/plugins"; export KYBER_SERVER_PLUGINS_PATH="$BASE/plugins"; log "Plugins folder: $KYBER_SERVER_PLUGINS_PATH"
 fi
 
@@ -153,7 +158,7 @@ args=(./kyber_cli start_server --show-console
       --game-path "$GAME_EXE")
 # --verbose echoes every argument, KYBER token included, so only use it when asked.
 case "$KYBER_LOG_LEVEL" in debug|trace) args+=(--verbose) ;; esac
-[ "${AMP_KYBER_MAXIMA_DEBUG:-false}" = "true" ] && args+=(--debug)
+is_true "${AMP_KYBER_MAXIMA_DEBUG:-}" && args+=(--debug)
 
 # ---------- KYBER API bridge (console commands + admins) ----------
 # kyber_cli does not read stdin, so commands typed in the AMP console are sent
@@ -195,7 +200,7 @@ if [ -f "$API" ] && command -v python3 >/dev/null; then
   # Admin sync once the server has registered (waits up to 5 minutes).
   (
     sync_args=()
-    [ "${AMP_KYBER_ADMINS_EXCLUSIVE:-false}" = "true" ] && sync_args+=(--remove-others)
+    is_true "${AMP_KYBER_ADMINS_EXCLUSIVE:-}" && sync_args+=(--remove-others)
     if [ "${#ADMINS[@]}" -gt 0 ] || [ "${#sync_args[@]}" -gt 0 ]; then
       KYBER_WAIT=300 python3 "$API" sync-admins "${sync_args[@]}" "${ADMINS[@]}"
     fi
