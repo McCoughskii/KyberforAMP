@@ -202,14 +202,21 @@ if [ -f "$API" ] && command -v python3 >/dev/null; then
   ) &
   # Forward console input. A leading "/" is optional, as in the KYBER launcher.
   # "admins" lists the current admins instead of being sent to the server.
+  # The AMP3 preview can deliver one console line several times in a row, so an
+  # identical line within 3 seconds of the previous one is ignored.
+  last_line=""; last_at=0
   while kill -0 "$kpid" 2>/dev/null; do
     if IFS= read -r -t 1 line; then
       line="$(trim "$line")"; [ -z "$line" ] && continue
+      now="$(date +%s%N)"; now=$((now / 1000000))
+      if [ "$line" = "$last_line" ] && [ $((now - last_at)) -lt 3000 ]; then continue; fi
+      last_line="$line"; last_at="$now"
       log "> $line"
       case "$line" in
         admins|/admins) python3 "$API" admins ;;
         *) python3 "$API" run "$line" ;;
       esac
+      now="$(date +%s%N)"; last_at=$((now / 1000000))   # window counts from when we finished
     else
       rc=$?; [ "$rc" -le 128 ] && sleep 1   # EOF (no console attached): don't spin
     fi
