@@ -55,7 +55,7 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "21",
+    "ConfigVersion": "23",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
@@ -83,7 +83,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-install.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-install.sh?cv=21",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-install.sh?cv=23",
       "UpdateSourceArgs": "kyber-install.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -92,7 +92,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-run.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-run.sh?cv=21",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-run.sh?cv=23",
       "UpdateSourceArgs": "kyber-run.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -101,7 +101,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-api.py",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-api.py?cv=21",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-api.py?cv=23",
       "UpdateSourceArgs": "kyber-api.py",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -463,7 +463,7 @@
       "setting.ModuleChannelCustom.name": "Custom Module Channel",
       "setting.ModuleChannelCustom.desc": "Used when the channel above is Custom, e.g. `ver/beta10`.",
       "setting.LogLevel.name": "Log Level",
-      "setting.LogLevel.desc": "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose, which prints your EA password and KYBER token in the console.",
+      "setting.LogLevel.desc": "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose. The EA login and tokens are replaced with **** in the console.",
       "setting.LogLevel.value.info": "info",
       "setting.LogLevel.value.debug": "debug",
       "setting.LogLevel.value.trace": "trace",
