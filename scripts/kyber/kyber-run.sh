@@ -89,12 +89,41 @@ CHANNEL="$(trim "${AMP_KYBER_MODULE_CHANNEL:-default}")"
 if [ -n "$CHANNEL" ] && [ "$CHANNEL" != "default" ]; then export KYBER_MODULE_CHANNEL="$CHANNEL"; else unset KYBER_MODULE_CHANNEL; fi
 export KYBER_LOG_LEVEL="$(trim "${AMP_KYBER_LOG_LEVEL:-info}")"
 
+# Writes a kyber_cli --raw-mods JSON for a Frosty .fbcollection and prints
+# "title|mod count". Usage: read_fbcollection <file.fbcollection> <out.json>
+read_fbcollection() {
+  python3 - "$1" "$2" <<'PY'
+# Frosty .fbcollection: uint32 LE magic "FCOL" (0x46434F4C), version,
+# manifest offset, manifest size, ... ; the manifest is JSON whose "mods"
+# lists the .fbmod files of the collection (relative to it) in load order.
+import json, os, struct, sys
+src, out = sys.argv[1], sys.argv[2]
+with open(src, "rb") as f:
+    magic, _ver, off, size = struct.unpack("<4I", f.read(16))
+    if magic != 0x46434F4C:
+        sys.exit("not a Frosty collection file")
+    f.seek(off)
+    manifest = json.loads(f.read(size).decode("utf-8"))
+base = os.path.dirname(os.path.abspath(src))
+mods = [m.replace("\\", "/") for m in manifest.get("mods", [])]
+missing = [m for m in mods if not os.path.isfile(os.path.join(base, m))]
+if missing:
+    sys.exit("missing mod files: " + ", ".join(missing))
+with open(out, "w") as f:
+    json.dump({"basePath": base, "modPaths": mods}, f, indent=1)
+print("%s|%d" % (manifest.get("title") or os.path.basename(src), len(mods)))
+PY
+}
+
 unset KYBER_MOD_FOLDER KYBER_SERVER_PLUGINS_PATH
+RAW_MODS=""
 if is_true "${AMP_KYBER_USE_MODS:-}"; then
-  # Upload the launcher's exported collection (.tar) into mods/. kyber_cli needs
-  # a folder holding the collection file (.fbcollection/.kbcollection) and its
-  # mods, so the .tar is unpacked into mods-unpacked/ (again only when it changes)
-  # and KYBER_MOD_FOLDER points there. mods/ itself keeps just the .tar.
+  # Upload the launcher's exported collection (.tar) into mods/; mods/ keeps just
+  # the .tar. It is unpacked into mods-unpacked/ (again only when it changes).
+  # kyber_cli's KYBER_MOD_FOLDER only accepts a KYBER .kbcollection file
+  # (CLI/lib/commands/start_server_command.dart), but launcher exports hold a
+  # Frosty .fbcollection plus its .fbmod files. For those, the mod list is read
+  # from the .fbcollection manifest and passed with --raw-mods instead.
   MODS="$BASE/mods"; UNPACKED="$BASE/mods-unpacked"; mkdir -p "$MODS"
   shopt -s nullglob nocaseglob; tars=("$MODS"/*.tar); shopt -u nullglob nocaseglob
   if [ "${#tars[@]}" -gt 1 ]; then
@@ -110,11 +139,20 @@ if is_true "${AMP_KYBER_USE_MODS:-}"; then
       tar -xf "$tarfile" -C "$UNPACKED" --no-same-owner || fail "could not unpack $(basename "$tarfile")."
       printf '%s' "$stamp" > "$UNPACKED/.source"
     fi
-    mapfile -t collections < <(find "$UNPACKED" -maxdepth 3 -type f \( -iname '*.fbcollection' -o -iname '*.kbcollection' \) 2>/dev/null)
-    if [ "${#collections[@]}" -eq 1 ]; then
+    # A .kbcollection (KYBER's own format) wins; it must sit beside all its mods.
+    mapfile -t collections < <(find "$UNPACKED" -maxdepth 3 -type f -name '*.kbcollection' 2>/dev/null)
+    [ "${#collections[@]}" -eq 0 ] && mapfile -t collections < <(find "$UNPACKED" -maxdepth 3 -type f -iname '*.fbcollection' 2>/dev/null)
+    if [ "${#collections[@]}" -eq 1 ] && [[ "${collections[0]}" == *.kbcollection ]]; then
       export KYBER_MOD_FOLDER="$(dirname "${collections[0]}")"
+      ls "$KYBER_MOD_FOLDER"/*.fbmod >/dev/null 2>&1 \
+        || warn "no .fbmod files next to $(basename "${collections[0]}"): the .kbcollection and all its mods must be in the same folder."
       coll="$(basename "${collections[0]}")"
       log "Mod collection: ${coll%.*} from $(basename "$tarfile") (mod folder $KYBER_MOD_FOLDER)"
+    elif [ "${#collections[@]}" -eq 1 ]; then
+      command -v python3 >/dev/null || fail "python3 is needed to read $(basename "${collections[0]}")."
+      RAW_MODS="$UNPACKED/raw-mods.json"
+      summary="$(read_fbcollection "${collections[0]}" "$RAW_MODS")" || fail "could not read the mod list from $(basename "${collections[0]}")."
+      log "Mod collection: ${summary%|*} (${summary##*|} mods) from $(basename "$tarfile")"
     elif [ "${#collections[@]}" -gt 1 ]; then
       fail "$(basename "$tarfile") contains more than one collection file: $(printf '%s ' "${collections[@]##*/}")"
     else
@@ -162,6 +200,7 @@ args=(./kyber_cli start_server --show-console
       --credentials="$EA_USER:$EA_PASS"
       --token "$TOKEN"
       --game-path "$GAME_EXE")
+[ -n "$RAW_MODS" ] && args+=(--raw-mods "$RAW_MODS")
 # --verbose echoes every argument, EA password and KYBER token included, so only use it when asked.
 case "$KYBER_LOG_LEVEL" in debug|trace) args+=(--verbose) ;; esac
 is_true "${AMP_KYBER_MAXIMA_DEBUG:-}" && args+=(--debug)
