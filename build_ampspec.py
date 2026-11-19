@@ -11,7 +11,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "15"
+CONFIG_VERSION = "16"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -109,10 +109,8 @@ setting("MapRotation", "rotation", "Map Rotation",
         keywords="map,rotation,mode,level")
 
 setting("UseMods", "mods", "Load Mod Collection",
-        "Loads a KYBER mod collection (for example Battlefront Plus). In the KYBER launcher: Mods > create a collection > "
-        "Play dropdown > Export Collection (tar). Upload the .tar into the `mods` folder with the File Manager and restart. "
-        "Keep only one .tar there; it is unpacked into `mods-unpacked` for the server. If the .tar also holds the collection's "
-        ".kbcollection file (from the launcher's mods folder), put it in the same folder as the .fbmod files. "
+        "Loads a KYBER mod collection (for example Battlefront Plus) from the `mods-previous` folder. "
+        "Upload the collection file and all of its mods directly into `mods-previous` with the File Manager and restart. "
         "Players need the same collection to join.",
         itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_USE_MODS", keywords="mods,collection,battlefront plus,modpack")
 setting("UsePlugins", "mods", "Enable Plugins Folder",
