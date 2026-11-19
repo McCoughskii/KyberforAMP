@@ -51,10 +51,11 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "3",
+    "ConfigVersion": "4",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
+    "ThrowawayMessageRegex": "^(?:[0-9a-f]{4}:(?:fixme|warn|trace):.*|[0-9a-f]{4}:err:(?:winediag|winstation|explorer|systray|ole|wineboot|setupapi|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*|wine: (?:configuration in .* has been updated|created the configuration directory).*|.*The explorer process failed to start.*|Could not find Wine Gecko.*|Could not find Wine Mono.*|reg: The operation completed successfully.*)$",
     "AppReadyRegex": "^$",
     "UserJoinRegex": "^$",
     "UserLeaveRegex": "^$",
@@ -101,6 +102,16 @@
     }
   ],
   "PortRequirements": [],
+  "BackupExclusions": [
+    "battlefront/",
+    "wine/",
+    "wine.new/",
+    "runtime/",
+    "runtime.new/",
+    "cli/",
+    "logs/",
+    ".kyber-tmp/"
+  ],
   "Settings": [
     {
       "FieldName": "EAToken",

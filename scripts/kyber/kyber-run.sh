@@ -110,6 +110,18 @@ if [ ! -f "$WINEPREFIX/system.reg" ]; then
   "$WINE" wineboot --init >/dev/null 2>&1 || warn "wineboot reported an error; continuing"
 fi
 
+# With an EA token session kyber_cli launches the game in "Online" mode, where
+# maxima only treats the game as installed if the registry entry the game's own
+# installer (touchup) would write is present. That installer cannot run headless,
+# so register the install ourselves (same key as __Installer/installerdata.xml).
+WIN_GAME_DIR="Z:$(printf '%s' "${GAME_DIR%/}" | tr '/' '\\')\\"
+for view in 64 32; do
+  "$WINE" reg add 'HKLM\Software\EA Games\STAR WARS Battlefront II' /v 'Install Dir' /d "$WIN_GAME_DIR" /f "/reg:$view" >/dev/null 2>&1 \
+    && "$WINE" reg add 'HKLM\Software\EA Games\STAR WARS Battlefront II' /v 'Locale' /d 'en_US' /f "/reg:$view" >/dev/null 2>&1 \
+    || warn "could not register the game install in the Wine registry (view $view)"
+done
+log "Registered game install: $WIN_GAME_DIR"
+
 # No --credentials: start_server has no EA-token option, so the EA login relies on
 # the session/licence maxima keeps from the token-based game download.
 args=(./kyber_cli start_server --show-console

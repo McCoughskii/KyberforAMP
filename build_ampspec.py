@@ -11,7 +11,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "3"
+CONFIG_VERSION = "4"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -32,6 +32,15 @@ for key, (cat, label) in SUB.items():
     locale[cat.split(":")[0]] = label
 
 settings = []
+
+WINE_NOISE = (
+    r"^(?:[0-9a-f]{4}:(?:fixme|warn|trace):.*"
+    r"|[0-9a-f]{4}:err:(?:winediag|winstation|explorer|systray|ole|wineboot|setupapi|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*"
+    r"|wine: (?:configuration in .* has been updated|created the configuration directory).*"
+    r"|.*The explorer process failed to start.*"
+    r"|Could not find Wine Gecko.*|Could not find Wine Mono.*"
+    r"|reg: The operation completed successfully.*)$"
+)
 env = {}
 
 
@@ -181,6 +190,9 @@ spec = {
         "MinAMPVersion": "2.6.0.0",
     },
     "Console": {
+        # Wine prints harmless noise when it runs without a display (no explorer
+        # window, no desktop, unimplemented stubs). Hide it; real errors still show.
+        "ThrowawayMessageRegex": WINE_NOISE,
         "AppReadyRegex": "^$",
         "UserJoinRegex": "^$",
         "UserLeaveRegex": "^$",
@@ -211,6 +223,17 @@ spec = {
         },
     ],
     "PortRequirements": [],
+    # Rebuilt by Update, so keep them out of snapshots (the game alone is ~90 GB).
+    "BackupExclusions": [
+        "battlefront/",
+        "wine/",
+        "wine.new/",
+        "runtime/",
+        "runtime.new/",
+        "cli/",
+        "logs/",
+        ".kyber-tmp/",
+    ],
     "Settings": settings,
     "ConfigFileMappings": [],
     "Locale": {"en": locale},
