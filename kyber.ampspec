@@ -29,6 +29,8 @@
       "AMP_KYBER_SERVER_NAME": "{{ServerName}}",
       "AMP_KYBER_SERVER_DESCRIPTION": "{{ServerDescription}}",
       "AMP_KYBER_SERVER_PASSWORD": "{{ServerPassword}}",
+      "AMP_KYBER_ADMINS": "{{Admins}}",
+      "AMP_KYBER_ADMINS_EXCLUSIVE": "{{AdminsExclusive}}",
       "AMP_KYBER_MAX_PLAYERS": "{{MaxPlayers}}",
       "AMP_KYBER_MAP_ROTATION": "{{MapRotation}}",
       "AMP_KYBER_USE_MODS": "{{UseMods}}",
@@ -51,7 +53,7 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "5",
+    "ConfigVersion": "6",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
@@ -94,6 +96,15 @@
       "OverwriteExistingFiles": true
     },
     {
+      "UpdateSource": "FetchURL",
+      "UpdateStageName": "Download kyber-api.py",
+      "UpdateSourcePlatform": "Linux",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-api.py",
+      "UpdateSourceArgs": "kyber-api.py",
+      "UpdateSourceTarget": "{{$FullRootDir}}scripts",
+      "OverwriteExistingFiles": true
+    },
+    {
       "UpdateSource": "Executable",
       "UpdateStageName": "Install KYBER runtime, Wine and game files",
       "UpdateSourcePlatform": "Linux",
@@ -110,7 +121,8 @@
     "runtime.new/",
     "cli/",
     "logs/",
-    ".kyber-tmp/"
+    ".kyber-tmp/",
+    ".kyber-api/"
   ],
   "Settings": [
     {
@@ -167,6 +179,32 @@
       "Description": "setting.ServerPassword.desc",
       "Keywords": "password,private",
       "InputType": "Password"
+    },
+    {
+      "FieldName": "Admins",
+      "ParamFieldName": "Admins",
+      "DefaultValue": "",
+      "Category": "category.kyber:rocket_launch",
+      "Subcategory": "category.server:dns:2",
+      "DisplayName": "setting.Admins.name",
+      "Description": "setting.Admins.desc",
+      "Keywords": "admin,admins,moderator,mod,staff,permissions",
+      "InputType": "Textarea"
+    },
+    {
+      "FieldName": "AdminsExclusive",
+      "ParamFieldName": "AdminsExclusive",
+      "DefaultValue": "false",
+      "Category": "category.kyber:rocket_launch",
+      "Subcategory": "category.server:dns:2",
+      "DisplayName": "setting.AdminsExclusive.name",
+      "Description": "setting.AdminsExclusive.desc",
+      "Keywords": "admin,moderator,remove",
+      "InputType": "checkbox",
+      "EnumValues": {
+        "False": "setting.AdminsExclusive.value.False",
+        "True": "setting.AdminsExclusive.value.True"
+      }
     },
     {
       "FieldName": "MaxPlayers",
@@ -349,6 +387,12 @@
       "setting.ServerDescription.desc": "Longer description for rules, Discord links and so on. Maximum 256 characters.",
       "setting.ServerPassword.name": "Server Password",
       "setting.ServerPassword.desc": "Password players must enter to join. Leave blank for a public server.",
+      "setting.Admins.name": "Server Admins",
+      "setting.Admins.desc": "KYBER/EA usernames or user IDs to make admins (KYBER moderators) of this server, one per line. They are added once the server has registered with KYBER, and can then moderate it from the KYBER launcher. Type `admins` in the console to list the current admins.",
+      "setting.AdminsExclusive.name": "Only These Admins",
+      "setting.AdminsExclusive.desc": "Also remove admins that are not in the list above (for example ones added from the KYBER launcher).",
+      "setting.AdminsExclusive.value.False": "Disabled",
+      "setting.AdminsExclusive.value.True": "Enabled",
       "setting.MaxPlayers.name": "Max Players",
       "setting.MaxPlayers.desc": "Maximum number of players (1-64).",
       "setting.MapRotation.name": "Map Rotation",

@@ -11,7 +11,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "5"
+CONFIG_VERSION = "6"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -87,6 +87,14 @@ setting("ServerDescription", "server", "Server Description",
         itype="Textarea", env_name="AMP_KYBER_SERVER_DESCRIPTION", keywords="description,motd,rules")
 setting("ServerPassword", "server", "Server Password", "Password players must enter to join. Leave blank for a public server.",
         itype="Password", env_name="AMP_KYBER_SERVER_PASSWORD", keywords="password,private")
+setting("Admins", "server", "Server Admins",
+        "KYBER/EA usernames or user IDs to make admins (KYBER moderators) of this server, one per line. "
+        "They are added once the server has registered with KYBER, and can then moderate it from the KYBER launcher. "
+        "Type `admins` in the console to list the current admins.",
+        itype="Textarea", env_name="AMP_KYBER_ADMINS", keywords="admin,admins,moderator,mod,staff,permissions")
+setting("AdminsExclusive", "server", "Only These Admins",
+        "Also remove admins that are not in the list above (for example ones added from the KYBER launcher).",
+        itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_ADMINS_EXCLUSIVE", keywords="admin,moderator,remove")
 setting("MaxPlayers", "server", "Max Players", "Maximum number of players (1-64).",
         itype="number", default="40", env_name="AMP_KYBER_MAX_PLAYERS", keywords="players,slots,max",
         MinValue=1, MaxValue=64)
@@ -215,6 +223,7 @@ spec = {
         },
         fetch("kyber-install.sh"),
         fetch("kyber-run.sh"),
+        fetch("kyber-api.py"),
         {
             "UpdateSource": "Executable",
             "UpdateStageName": "Install KYBER runtime, Wine and game files",
@@ -234,6 +243,7 @@ spec = {
         "cli/",
         "logs/",
         ".kyber-tmp/",
+        ".kyber-api/",
     ],
     "Settings": settings,
     "ConfigFileMappings": [],

@@ -131,6 +131,62 @@ args=(./kyber_cli start_server --show-console
 case "$KYBER_LOG_LEVEL" in debug|trace) args+=(--verbose) ;; esac
 [ "${AMP_KYBER_MAXIMA_DEBUG:-false}" = "true" ] && args+=(--debug)
 
+# ---------- KYBER API bridge (console commands + admins) ----------
+# kyber_cli does not read stdin, so commands typed in the AMP console are sent
+# to the server through the KYBER API (ServerManagement.RunCommand), the same
+# way the KYBER launcher does it. Admins are KYBER moderators, also set via the API.
+API="$BASE/scripts/kyber-api.py"
+export KYBER_TOKEN="$TOKEN" KYBER_EA_TOKEN="$EA_TOKEN" KYBER_STATE_DIR="$BASE/.kyber-api"
+rm -f "$KYBER_STATE_DIR/api-state.json"   # server id changes on every start
+
+ADMINS=()
+while IFS= read -r a; do a="$(trim "$a")"; [ -n "$a" ] && ADMINS+=("$a"); done \
+  < <(printf '%s\n' "${AMP_KYBER_ADMINS:-}" | sed 's/\\n/\n/g' | tr ',' '\n')
+
 log "Starting KYBER server '$KYBER_SERVER_NAME' (max $KYBER_SERVER_MAX_PLAYERS players)"
 cd "$RUNTIME" || fail "cannot enter $RUNTIME"
-exec "${args[@]}"
+# Job control gives kyber_cli its own process group; without it bash would start
+# the background job with SIGINT ignored and AMP's Stop could not reach it.
+set -m
+"${args[@]}" < /dev/null &
+kpid=$!
+set +m
+
+stopping=0
+stop_server() {
+  [ "$stopping" = 1 ] && return; stopping=1
+  log "Stopping KYBER server ..."
+  kill -INT "$kpid" 2>/dev/null
+  for _ in $(seq 1 20); do kill -0 "$kpid" 2>/dev/null || return; sleep 1; done
+  kill -TERM "$kpid" 2>/dev/null; sleep 5; kill -KILL "$kpid" 2>/dev/null
+}
+trap stop_server INT TERM HUP
+
+if [ -f "$API" ] && command -v python3 >/dev/null; then
+  # Admin sync once the server has registered (waits up to 5 minutes).
+  (
+    sync_args=()
+    [ "${AMP_KYBER_ADMINS_EXCLUSIVE:-false}" = "true" ] && sync_args+=(--remove-others)
+    if [ "${#ADMINS[@]}" -gt 0 ] || [ "${#sync_args[@]}" -gt 0 ]; then
+      KYBER_WAIT=300 python3 "$API" sync-admins "${sync_args[@]}" "${ADMINS[@]}"
+    fi
+  ) &
+  # Forward console input. A leading "/" is optional, as in the KYBER launcher.
+  # "admins" lists the current admins instead of being sent to the server.
+  while kill -0 "$kpid" 2>/dev/null; do
+    if IFS= read -r -t 1 line; then
+      line="$(trim "$line")"; [ -z "$line" ] && continue
+      case "$line" in
+        admins|/admins) python3 "$API" admins ;;
+        *) python3 "$API" run "$line" ;;
+      esac
+    else
+      rc=$?; [ "$rc" -le 128 ] && sleep 1   # EOF (no console attached): don't spin
+    fi
+  done
+else
+  warn "kyber-api.py or python3 missing: console commands and admins are disabled."
+fi
+wait "$kpid"; rc=$?
+log "KYBER server exited with code $rc"
+exit "$rc"
