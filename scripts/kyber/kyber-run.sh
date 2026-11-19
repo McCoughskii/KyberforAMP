@@ -52,6 +52,7 @@ exec > >(
   secrets=()
   for s in "$EA_PASS" "$TOKEN" "$EA_TOKEN" "$EA_USER"; do [ "${#s}" -ge 4 ] && secrets+=("$s"); done
   while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%$'\r'}"   # the game's output ends lines with CRLF; AMP's regexes expect none
     if [[ "$line" == *"[KYBER] [info] [AMP] heartbeat" ]]; then : > "$HEARTBEAT"; continue; fi
     for s in "${secrets[@]}"; do line="${line//"$s"/****}"; done
     printf '%s\n' "$line"
@@ -317,10 +318,21 @@ case "$FREEZE_TIMEOUT" in ''|*[!0-9]*) FREEZE_TIMEOUT=180 ;; esac
 [ -n "${KYBER_DEV_PLUGIN_PATH:-}" ] || FREEZE_TIMEOUT=0   # no plugin, no heartbeat
 crash_marker() { stat -c %Y "$WINEPREFIX"/drive_c/users/*/AppData/Roaming/ArmchairDevelopers/Kyber/ModuleData/Sentry/last_crash 2>/dev/null | sort -n | tail -n1; }
 watchdog() {
-  local marker seen=0 gone=0 reason age
+  local marker seen=0 gone=0 reason age last_status beat
   marker="$(crash_marker)"
+  last_status="$(date +%s)"
   while kill -0 "$kpid" 2>/dev/null; do
     sleep 5
+    # One timestamped status line every 30 minutes instead of every heartbeat.
+    if [ $(( $(date +%s) - last_status )) -ge 1800 ] && [ ! -f "$WATCH_DIR/stopping" ]; then
+      last_status="$(date +%s)"
+      if [ -f "$HEARTBEAT" ]; then
+        beat=$(( $(date +%s) - $(stat -c %Y "$HEARTBEAT" 2>/dev/null || date +%s) ))
+        log "$(date '+%Y-%m-%d %H:%M:%S %Z') Watchdog: server healthy (last server tick ${beat}s ago)."
+      elif game_running; then
+        log "$(date '+%Y-%m-%d %H:%M:%S %Z') Watchdog: game running (no server tick seen yet)."
+      fi
+    fi
     [ -f "$WATCH_DIR/stopping" ] && return
     reason=""
     if [ "$(crash_marker)" != "$marker" ]; then
