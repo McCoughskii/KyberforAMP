@@ -51,7 +51,7 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "2",
+    "ConfigVersion": "3",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
@@ -173,7 +173,7 @@
     {
       "FieldName": "MapRotation",
       "ParamFieldName": "MapRotation",
-      "DefaultValue": "WyJzdXBfZ2Vvbm9zaXMiLCJzdXBfY2FzY2FkZSJd",
+      "DefaultValue": "",
       "Category": "category.kyber:rocket_launch",
       "Subcategory": "category.rotation:map:3",
       "DisplayName": "setting.MapRotation.name",
@@ -341,7 +341,7 @@
       "setting.MaxPlayers.name": "Max Players",
       "setting.MaxPlayers.desc": "Maximum number of players (1-64).",
       "setting.MapRotation.name": "Map Rotation",
-      "setting.MapRotation.desc": "Paste the base64 string from the KYBER launcher (Host tab > NEW > add maps > Export). A raw JSON array, or a plain list of entries (one per line or comma separated) also works and is encoded for you.",
+      "setting.MapRotation.desc": "One entry per map as `mode;map`. Paste the base64 string from the KYBER launcher (Host > NEW > add maps > Export), or type `mode;map` lines such as `PlanetaryBattles;S5_1/Levels/MP/Geonosis_01/Geonosis_01`. The launcher's JSON export also works.",
       "setting.UseMods.name": "Load Mod Collection",
       "setting.UseMods.desc": "Loads the mod collection extracted into the `mods` folder. In the KYBER launcher: Mods > Create New Collection > Play dropdown > Export Collection (tar), then upload and extract the tar into `mods` with the File Manager.",
       "setting.UseMods.value.False": "Disabled",
@@ -360,7 +360,7 @@
       "setting.ModuleChannelCustom.name": "Custom Module Channel",
       "setting.ModuleChannelCustom.desc": "Used when the channel above is Custom, e.g. `ver/beta10`.",
       "setting.LogLevel.name": "Log Level",
-      "setting.LogLevel.desc": "KYBER log verbosity.",
+      "setting.LogLevel.desc": "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose, which prints your KYBER token in the console.",
       "setting.LogLevel.value.info": "info",
       "setting.LogLevel.value.debug": "debug",
       "setting.LogLevel.value.trace": "trace",

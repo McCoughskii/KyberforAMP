@@ -11,7 +11,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "2"
+CONFIG_VERSION = "3"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -83,9 +83,10 @@ setting("MaxPlayers", "server", "Max Players", "Maximum number of players (1-64)
         MinValue=1, MaxValue=64)
 
 setting("MapRotation", "rotation", "Map Rotation",
-        "Paste the base64 string from the KYBER launcher (Host tab > NEW > add maps > Export). "
-        "A raw JSON array, or a plain list of entries (one per line or comma separated) also works and is encoded for you.",
-        itype="Textarea", default="WyJzdXBfZ2Vvbm9zaXMiLCJzdXBfY2FzY2FkZSJd", env_name="AMP_KYBER_MAP_ROTATION",
+        "One entry per map as `mode;map`. Paste the base64 string from the KYBER launcher "
+        "(Host > NEW > add maps > Export), or type `mode;map` lines such as "
+        "`PlanetaryBattles;S5_1/Levels/MP/Geonosis_01/Geonosis_01`. The launcher's JSON export also works.",
+        itype="Textarea", env_name="AMP_KYBER_MAP_ROTATION",
         keywords="map,rotation,mode,level")
 
 setting("UseMods", "mods", "Load Mod Collection",
@@ -105,7 +106,7 @@ setting("ModuleChannel", "advanced", "KYBER Module Channel", "Release channel of
         enum={"default": "Default", "stable": "stable", "custom": "Custom (set below)"})
 setting("ModuleChannelCustom", "advanced", "Custom Module Channel", "Used when the channel above is Custom, e.g. `ver/beta10`.",
         env_name="AMP_KYBER_MODULE_CHANNEL_CUSTOM", keywords="module,channel,version", Placeholder="ver/beta10")
-setting("LogLevel", "advanced", "Log Level", "KYBER log verbosity.",
+setting("LogLevel", "advanced", "Log Level", "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose, which prints your KYBER token in the console.",
         itype="enum", default="info", env_name="AMP_KYBER_LOG_LEVEL", keywords="log,debug,trace",
         enum={"info": "info", "debug": "debug", "trace": "trace"})
 setting("MaximaDebug", "advanced", "Maxima Debug Output", "Adds --debug to kyber_cli for troubleshooting EA login problems.",

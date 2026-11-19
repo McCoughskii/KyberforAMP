@@ -111,7 +111,13 @@ if [ -n "$EA_TOKEN" ]; then
   # redraws a progress spinner every 0.2s. Run it in the background, show every
   # 5% step, and close it ourselves shortly after it reports 100%.
   DL_LOG="$TMP/download.log"; : > "$DL_LOG"
-  ( cd "$RUNTIME/opt/kyber" && KYBER_BYPASS_DOCKER_I_REALLY_KNOW_WHAT_I_AM_DOING=1 \
+  # After downloading, kyber_cli runs a "touchup" that verifies Wine dependencies,
+  # so give it the same Wine setup the server uses.
+  mkdir -p "$HOME/.local/share/maxima/wine/prefix"
+  ( cd "$RUNTIME/opt/kyber" && export KYBER_BYPASS_DOCKER_I_REALLY_KNOW_WHAT_I_AM_DOING=1 \
+      MAXIMA_DISABLE_WINE_VERIFICATION=1 MAXIMA_DISABLE_QRC=1 \
+      MAXIMA_WINE_COMMAND="$WINE_DIR/bin/wine64" WINEPREFIX="$HOME/.local/share/maxima/wine/prefix" \
+      WINEDEBUG=-all LD_LIBRARY_PATH="$RUNTIME/opt/kyber" && \
       exec ./kyber_cli download_game -p "$GAME_DIR" -t "$EA_TOKEN" ) >"$DL_LOG" 2>&1 &
   dl_pid=$!
   # If AMP aborts the update, take kyber_cli down with us instead of orphaning it.
@@ -125,15 +131,20 @@ if [ -n "$EA_TOKEN" ]; then
       }
       NF { print; fflush() }' &
   show_pid=$!
-  done_at=0
+  # Once 100% is reached, wait until kyber_cli has printed nothing but spinner
+  # redraws for 60s (its touchup steps print real lines), then close it.
+  done_at=0; quiet_since=0; last_real=""
   while kill -0 "$dl_pid" 2>/dev/null; do
     sleep 2
     if [ "$done_at" = 0 ] && tr '\r' '\n' < "$DL_LOG" | grep -aqE '\(100(\.0+)?%\)'; then
-      done_at=$SECONDS
-      log "Download reached 100%. Waiting up to 30s for kyber_cli to finish ..."
+      done_at=$SECONDS; quiet_since=$SECONDS
+      log "Download reached 100%. Waiting for kyber_cli to finish its checks ..."
     fi
-    if [ "$done_at" != 0 ] && [ $((SECONDS - done_at)) -ge 30 ]; then
-      log "kyber_cli is still open after finishing; closing it."
+    [ "$done_at" = 0 ] && continue
+    real="$(tr '\r' '\n' < "$DL_LOG" | grep -av '%)' | grep -a . | tail -n 1)"
+    if [ "$real" != "$last_real" ]; then last_real="$real"; quiet_since=$SECONDS; fi
+    if [ $((SECONDS - quiet_since)) -ge 60 ]; then
+      log "kyber_cli has finished but stayed open; closing it."
       stop_download
       break
     fi
@@ -144,7 +155,7 @@ if [ -n "$EA_TOKEN" ]; then
   [ "$done_at" != 0 ] && dl_rc=0
   [ "$dl_rc" -eq 0 ] \
     || fail "game download failed. EA tokens expire quickly - create a fresh one with 'kyber_cli get_ea_token' and update again."
-  log "Game download finished. You can clear the EA token setting now."
+  log "Game download finished."
 elif ls "$GAME_DIR" 2>/dev/null | grep -qi '^starwarsbattlefrontii\.exe$'; then
   log "Game files found in $GAME_DIR."
 else

@@ -45,19 +45,34 @@ case "$MAXP" in ''|*[!0-9]*) MAXP=40 ;; esac
 export KYBER_SERVER_MAX_PLAYERS="$MAXP"
 
 # ---------- map rotation ----------
-# Accepts the base64 string exported by the KYBER launcher, a JSON array,
-# or a plain list of entries (one per line or comma separated).
+# kyber_cli expects KYBER_MAP_ROTATION = base64 of "mode;map" lines (see
+# CLI/lib/commands/start_server_command.dart). Accepted here:
+#   - the base64 string from the KYBER launcher's Export (used as-is)
+#   - plain "mode;map" lines
+#   - the launcher's JSON export: [{"mode": "...", "map": "..."}]
 ROT="${AMP_KYBER_MAP_ROTATION:-}"; ROT="$(trim "${ROT//\\n/$'\n'}")"
 [ -n "$ROT" ] || fail "Set a map rotation (Kyber > Map Rotation)."
 if [ "${ROT:0:1}" = "[" ]; then
-  ROT_B64="$(printf '%s' "$ROT" | base64 -w0)"
-elif DEC="$(printf '%s' "$ROT" | tr -d '[:space:]' | base64 -d 2>/dev/null)" && [ "${DEC:0:1}" = "[" ]; then
-  ROT_B64="$(printf '%s' "$ROT" | tr -d '[:space:]')"
+  LINES="$(printf '%s' "$ROT" | jq -r '.[] | "\(.mode);\(.map)"')" || fail "Map rotation JSON is not valid."
+elif [[ "$ROT" == *";"* ]]; then
+  LINES="$ROT"
 else
-  ROT_B64="$(printf '%s\n' "$ROT" | tr ',' '\n' | jq -R 'gsub("^\\s+|\\s+$";"") | select(length>0)' | jq -sc . | tr -d '\n' | base64 -w0)"
+  LINES="$(printf '%s' "$ROT" | tr -d '[:space:]' | base64 -d 2>/dev/null)" \
+    || fail "Map rotation is not valid base64. Paste the string from the KYBER launcher's Export, or 'mode;map' lines."
 fi
-export KYBER_MAP_ROTATION="$ROT_B64"
-log "Map rotation: $(printf '%s' "$ROT_B64" | base64 -d 2>/dev/null | head -c 400)"
+LINES="$(printf '%s\n' "$LINES" | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+count=0; n=0
+while IFS= read -r line; do
+  n=$((n + 1))
+  [ -z "$line" ] || [ "${line:0:1}" = "#" ] && continue
+  [ "$(printf '%s' "$line" | tr -cd ';' | wc -c)" -eq 1 ] \
+    || fail "Map rotation entry $n is not in 'mode;map' form: $line"
+  count=$((count + 1))
+done <<< "$LINES"
+[ "$count" -gt 0 ] || fail "Map rotation has no entries."
+export KYBER_MAP_ROTATION="$(printf '%s' "$LINES" | base64 -w0)"
+log "Map rotation: $count entries"
+while IFS= read -r line; do [ -n "$line" ] && [ "${line:0:1}" != "#" ] && log "  $line"; done <<< "$LINES"
 
 # ---------- optional ----------
 CHANNEL="$(trim "${AMP_KYBER_MODULE_CHANNEL:-default}")"
@@ -99,8 +114,9 @@ fi
 # the session/licence maxima keeps from the token-based game download.
 args=(./kyber_cli start_server --show-console
       --token "$TOKEN"
-      --game-path "$GAME_EXE"
-      --verbose)
+      --game-path "$GAME_EXE")
+# --verbose echoes every argument, KYBER token included, so only use it when asked.
+case "$KYBER_LOG_LEVEL" in debug|trace) args+=(--verbose) ;; esac
 [ "${AMP_KYBER_MAXIMA_DEBUG:-false}" = "true" ] && args+=(--debug)
 
 log "Starting KYBER server '$KYBER_SERVER_NAME' (max $KYBER_SERVER_MAX_PLAYERS players)"
