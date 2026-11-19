@@ -15,7 +15,7 @@ Environment:
   KYBER_TOKEN          KYBER token (sent as the authorization header)
   KYBER_EA_TOKEN       optional; used to log in if the KYBER token is rejected
   KYBER_SERVER_NAME    name used to find this server among the account's servers
-  KYBER_API_HOST       default api.prod.kyber.gg
+  KYBER_API_HOST       default api-rpc.prod.kyber.gg
   KYBER_STATE_DIR      where the session token and server id are cached
 """
 import json
@@ -26,8 +26,10 @@ import sys
 import tempfile
 import zlib
 import time
+import uuid
 
-HOST = os.environ.get("KYBER_API_HOST", "api.prod.kyber.gg")
+HOST = os.environ.get("KYBER_API_HOST", "api-rpc.prod.kyber.gg")  # gRPC host (api.* is the HTTP API)
+SESSION_ID = str(uuid.uuid4())
 STATE_DIR = os.environ.get("KYBER_STATE_DIR", os.path.join(os.environ.get("HOME", "/tmp"), ".kyber-amp"))
 STATE_FILE = os.path.join(STATE_DIR, "api-state.json")
 
@@ -101,6 +103,8 @@ def call(method, payload=b"", auth=None):
             f.write(frame)
         cmd = [os.environ.get("KYBER_CURL", "curl"), "-sS", "--http2", "--max-time", "20", "-X", "POST",
                "-H", "content-type: application/grpc", "-H", "te: trailers",
+               # Same metadata the KYBER launcher sends (Packages/kyber/.../api_service.dart).
+               "-H", "x-session-id: " + SESSION_ID, "-H", "x-kv2-dsid: 53ff61a4-b751-40f6-a0c8-31d362f29936",
                "--data-binary", "@" + body_in, "-D", hdrs, "-o", body_out]
         if auth:
             # Passed through a config file so the token never appears in `ps`.
