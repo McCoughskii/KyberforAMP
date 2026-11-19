@@ -17,7 +17,7 @@ import pathlib
 HERE = pathlib.Path(__file__).parent
 BRANCH = "dev"
 REPO_RAW = f"https://raw.githubusercontent.com/McCoughskii/KyberforAMP/{BRANCH}"
-CONFIG_VERSION = "28"
+CONFIG_VERSION = "29"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -131,6 +131,14 @@ setting("TrackPlayers", "mods", "Show Players in AMP",
         "Connected Users list and chat work (KYBER otherwise only sends them to the KYBER launcher). "
         "Works whether or not the plugins folder is enabled.",
         itype="checkbox", default="true", enum=BOOL, env_name="AMP_KYBER_TRACK_PLAYERS", keywords="players,users,chat,connected")
+setting("CrashWatchdog", "game", "Crash Watchdog",
+        "Watches for a crashed or frozen game while KYBER keeps running, prints CRASH DETECTED in the console and "
+        "stops the server with an error so AMP restarts it.",
+        itype="checkbox", default="true", enum=BOOL, env_name="AMP_KYBER_CRASH_WATCHDOG", keywords="crash,watchdog,freeze,hang,restart")
+setting("FreezeTimeout", "game", "Freeze Timeout (seconds)",
+        "Treat the game as frozen after this many seconds without a server tick. Needs Show Players in AMP "
+        "(its plugin sends the tick). 0 turns freeze detection off.",
+        itype="number", default="180", env_name="AMP_KYBER_FREEZE_TIMEOUT", keywords="crash,freeze,hang,timeout")
 
 setting("GameDir", "game", "Game Directory",
         "Folder holding starwarsbattlefrontii.exe, as seen inside the shard. Leave blank for the `battlefront` folder of this server.",

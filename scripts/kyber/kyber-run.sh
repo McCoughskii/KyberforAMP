@@ -42,12 +42,17 @@ TOKEN="$(trim "${AMP_KYBER_TOKEN:-}")"
 # EA login and tokens with **** on the way out. A bash read loop, not awk: the
 # container's mawk buffers piped input, which held console lines back. The
 # filter ignores AMP's stop signals so it can still pass on the shutdown
-# messages; it ends at EOF.
+# messages; it ends at EOF. It also swallows the built-in plugin's heartbeat
+# lines, touching $HEARTBEAT instead so the crash watchdog can spot a frozen game.
+WATCH_DIR="$BASE/.watchdog"
+HEARTBEAT="$WATCH_DIR/heartbeat"
+rm -rf "$WATCH_DIR"; mkdir -p "$WATCH_DIR"
 exec > >(
   trap '' INT TERM HUP
   secrets=()
   for s in "$EA_PASS" "$TOKEN" "$EA_TOKEN" "$EA_USER"; do [ "${#s}" -ge 4 ] && secrets+=("$s"); done
   while IFS= read -r line || [ -n "$line" ]; do
+    if [[ "$line" == *"[KYBER] [info] [AMP] heartbeat" ]]; then : > "$HEARTBEAT"; continue; fi
     for s in "${secrets[@]}"; do line="${line//"$s"/****}"; done
     printf '%s\n' "$line"
   done
@@ -185,6 +190,13 @@ end)
 EventManager.Listen("ServerPlayer:SendMessage", function(p, msg)
     if p and not p.isBot then print("chat " .. p.name .. ": " .. tostring(msg)) end
 end)
+-- Heartbeat every 30 s of server time; the run script's crash watchdog uses it
+-- to notice a frozen game. The console filter hides these lines.
+local sinceBeat = 0
+EventManager.Listen("Server:UpdatePre", function(dt)
+    sinceBeat = sinceBeat + dt
+    if sinceBeat >= 30 then sinceBeat = 0; print("heartbeat") end
+end)
 LUA
   export KYBER_DEV_PLUGIN_PATH="Z:$(printf '%s' "$AMP_PLUGIN" | tr '/' '\\')"
 fi
@@ -268,6 +280,7 @@ set +m
 stopping=0
 stop_server() {
   [ "$stopping" = 1 ] && return; stopping=1
+  : > "$WATCH_DIR/stopping"   # tells the crash watchdog this is not a crash
   log "Stopping KYBER server ..."
   kill -INT "$kpid" 2>/dev/null
   for _ in $(seq 1 10); do kill -0 "$kpid" 2>/dev/null || return; sleep 1; done
@@ -279,6 +292,55 @@ stop_server() {
   "$WINESERVER" -k9 >/dev/null 2>&1
 }
 trap stop_server INT TERM HUP
+
+# ---------- crash watchdog ----------
+# kyber_cli only exits when the game's EA (LSX) connection closes, so a crashed
+# or frozen game can leave it running and AMP showing "Running" with no server.
+# Turn every crash into a clear console message and a failed exit so AMP
+# restarts the server:
+#  - KYBER's crash handler updated its Sentry last_crash marker;
+#  - the game process is gone while kyber_cli is still running;
+#  - no heartbeat from the built-in plugin for Freeze Timeout seconds.
+FREEZE_TIMEOUT="$(trim "${AMP_KYBER_FREEZE_TIMEOUT:-180}")"
+case "$FREEZE_TIMEOUT" in ''|*[!0-9]*) FREEZE_TIMEOUT=180 ;; esac
+[ -n "${KYBER_DEV_PLUGIN_PATH:-}" ] || FREEZE_TIMEOUT=0   # no plugin, no heartbeat
+crash_marker() { stat -c %Y "$WINEPREFIX"/drive_c/users/*/AppData/Roaming/ArmchairDevelopers/Kyber/ModuleData/Sentry/last_crash 2>/dev/null | sort -n | tail -n1; }
+watchdog() {
+  local marker seen=0 gone=0 reason age
+  marker="$(crash_marker)"
+  while kill -0 "$kpid" 2>/dev/null; do
+    sleep 5
+    [ -f "$WATCH_DIR/stopping" ] && return
+    reason=""
+    if [ "$(crash_marker)" != "$marker" ]; then
+      reason="the game crashed (KYBER's crash handler fired)"
+    elif game_running; then
+      seen=1; gone=0
+    elif [ "$seen" = 1 ]; then
+      gone=$((gone + 5)); [ "$gone" -ge 20 ] && reason="the game process ended but kyber_cli kept running"
+    fi
+    if [ -z "$reason" ] && [ "$FREEZE_TIMEOUT" -gt 0 ] && [ -f "$HEARTBEAT" ]; then
+      age=$(( $(date +%s) - $(stat -c %Y "$HEARTBEAT" 2>/dev/null || date +%s) ))
+      [ "$age" -ge "$FREEZE_TIMEOUT" ] && reason="the game stopped responding (no server tick for ${age}s)"
+    fi
+    [ -f "$WATCH_DIR/stopping" ] && return
+    if [ -n "$reason" ]; then
+      printf '%s\n' "$reason" > "$WATCH_DIR/crashed"
+      warn "CRASH DETECTED: $reason. Stopping the server so AMP restarts it."
+      kill -INT "$kpid" 2>/dev/null
+      for _ in $(seq 1 10); do kill -0 "$kpid" 2>/dev/null || break; sleep 1; done
+      close_game >/dev/null 2>&1
+      kill -TERM "$kpid" 2>/dev/null
+      return
+    fi
+  done
+}
+if is_true "${AMP_KYBER_CRASH_WATCHDOG:-true}"; then
+  watchdog &
+  WATCHDOG_PID=$!
+  [ "$FREEZE_TIMEOUT" -gt 0 ] && log "Crash watchdog on (freeze timeout ${FREEZE_TIMEOUT}s)." \
+    || log "Crash watchdog on (freeze detection off: needs Show Players in AMP and a Freeze Timeout above 0)."
+fi
 
 if [ -f "$API" ] && command -v python3 >/dev/null; then
   # Admin sync once the server has registered (waits up to 5 minutes).
@@ -315,9 +377,21 @@ else
 fi
 wait "$kpid"; rc=$?
 log "KYBER server exited with code $rc"
+[ -n "${WATCHDOG_PID:-}" ] && { kill "$WATCHDOG_PID" 2>/dev/null; wait "$WATCHDOG_PID" 2>/dev/null; }
 if game_running; then
   log "Closing the game ..."
   close_game || warn "the game did not close. Use Stop, wait for Stopped, then Start."
+fi
+# A game crash that ends kyber_cli on its own is also a crash. AMP's Stop and
+# Restart signal kyber_cli directly (exit 130/143/137), which is not.
+case "$rc" in 130|143|137) stopped_by_signal=1 ;; *) stopped_by_signal=0 ;; esac
+if [ ! -f "$WATCH_DIR/crashed" ] && [ ! -f "$WATCH_DIR/stopping" ] && [ "$stopping" = 0 ] && [ "$stopped_by_signal" = 0 ]; then
+  printf 'the game exited without a stop request (exit code %s)\n' "$rc" > "$WATCH_DIR/crashed"
+  warn "CRASH DETECTED: the server ended without a stop request (exit code $rc)."
+fi
+if [ -f "$WATCH_DIR/crashed" ]; then
+  warn "Server crashed: $(cat "$WATCH_DIR/crashed"). KYBER's log is in the Wine prefix under AppData/Roaming/ArmchairDevelopers/Kyber/Logs."
+  rc=1
 fi
 exec >&- 2>&-; wait "$CENSOR_PID" 2>/dev/null   # let the console filter print its last lines
 exit "$rc"

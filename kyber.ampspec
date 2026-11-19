@@ -37,6 +37,8 @@
       "AMP_KYBER_USE_MODS": "{{UseMods}}",
       "AMP_KYBER_USE_PLUGINS": "{{UsePlugins}}",
       "AMP_KYBER_TRACK_PLAYERS": "{{TrackPlayers}}",
+      "AMP_KYBER_CRASH_WATCHDOG": "{{CrashWatchdog}}",
+      "AMP_KYBER_FREEZE_TIMEOUT": "{{FreezeTimeout}}",
       "AMP_KYBER_GAME_DIR": "{{GameDir}}",
       "AMP_KYBER_EA_TOKEN": "{{EAToken}}",
       "AMP_KYBER_MODULE_CHANNEL": "{{ModuleChannel}}",
@@ -56,7 +58,7 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "28",
+    "ConfigVersion": "29",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
@@ -84,7 +86,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-install.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-install.sh?cv=28",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-install.sh?cv=29",
       "UpdateSourceArgs": "kyber-install.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -93,7 +95,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-run.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-run.sh?cv=28",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-run.sh?cv=29",
       "UpdateSourceArgs": "kyber-run.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -102,7 +104,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-api.py",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-api.py?cv=28",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-api.py?cv=29",
       "UpdateSourceArgs": "kyber-api.py",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -288,6 +290,32 @@
       }
     },
     {
+      "FieldName": "CrashWatchdog",
+      "ParamFieldName": "CrashWatchdog",
+      "DefaultValue": "true",
+      "Category": "category.kyber:rocket_launch",
+      "Subcategory": "category.game:download:6",
+      "DisplayName": "setting.CrashWatchdog.name",
+      "Description": "setting.CrashWatchdog.desc",
+      "Keywords": "crash,watchdog,freeze,hang,restart",
+      "InputType": "checkbox",
+      "EnumValues": {
+        "False": "setting.CrashWatchdog.value.False",
+        "True": "setting.CrashWatchdog.value.True"
+      }
+    },
+    {
+      "FieldName": "FreezeTimeout",
+      "ParamFieldName": "FreezeTimeout",
+      "DefaultValue": "180",
+      "Category": "category.kyber:rocket_launch",
+      "Subcategory": "category.game:download:6",
+      "DisplayName": "setting.FreezeTimeout.name",
+      "Description": "setting.FreezeTimeout.desc",
+      "Keywords": "crash,freeze,hang,timeout",
+      "InputType": "number"
+    },
+    {
       "FieldName": "GameDir",
       "ParamFieldName": "GameDir",
       "DefaultValue": "",
@@ -467,6 +495,12 @@
       "setting.TrackPlayers.desc": "Loads a tiny built-in KYBER plugin that prints player joins, leaves and chat to the console, so AMP's Connected Users list and chat work (KYBER otherwise only sends them to the KYBER launcher). Works whether or not the plugins folder is enabled.",
       "setting.TrackPlayers.value.False": "Disabled",
       "setting.TrackPlayers.value.True": "Enabled",
+      "setting.CrashWatchdog.name": "Crash Watchdog",
+      "setting.CrashWatchdog.desc": "Watches for a crashed or frozen game while KYBER keeps running, prints CRASH DETECTED in the console and stops the server with an error so AMP restarts it.",
+      "setting.CrashWatchdog.value.False": "Disabled",
+      "setting.CrashWatchdog.value.True": "Enabled",
+      "setting.FreezeTimeout.name": "Freeze Timeout (seconds)",
+      "setting.FreezeTimeout.desc": "Treat the game as frozen after this many seconds without a server tick. Needs Show Players in AMP (its plugin sends the tick). 0 turns freeze detection off.",
       "setting.GameDir.name": "Game Directory",
       "setting.GameDir.desc": "Folder holding starwarsbattlefrontii.exe, as seen inside the shard. Leave blank for the `battlefront` folder of this server.",
       "setting.VerifyGame.name": "Verify Game Files on Update",
