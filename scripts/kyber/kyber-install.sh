@@ -42,10 +42,8 @@ API="https://$registry/v2/$repo"
 ACCEPT="application/vnd.oci.image.index.v1+json,application/vnd.docker.distribution.manifest.list.v2+json,application/vnd.oci.image.manifest.v1+json,application/vnd.docker.distribution.manifest.v2+json"
 
 auth=()
-challenge="$(curl -fsSI "$API/" 2>/dev/null | tr -d '\r' | grep -i '^www-authenticate:' || true)"
-if [ -z "$challenge" ]; then
-  challenge="$(curl -sI "$API/" | tr -d '\r' | grep -i '^www-authenticate:' || true)"
-fi
+# The registry root answers GET /v2/ with a 401 whose header says where to get a token.
+challenge="$(curl -s -o /dev/null -D - "https://$registry/v2/" | tr -d '\r' | grep -i '^www-authenticate:' || true)"
 if [[ "$challenge" == *Bearer* ]]; then
   realm="$(sed -n 's/.*realm="\([^"]*\)".*/\1/p' <<<"$challenge")"
   service="$(sed -n 's/.*service="\([^"]*\)".*/\1/p' <<<"$challenge")"
@@ -70,7 +68,7 @@ else
   # Layers created by COPY hold the KYBER files; the others are distro packages we already have.
   mapfile -t wanted < <(jq -r --argjson m "$manifest" '
       [.history[] | select(.empty_layer != true)] as $h
-      | range(0; $h|length) | select($h[.].created_by | test("COPY")) | $m.layers[.].digest' <<<"$config")
+      | range(0; $h|length) | select(($h[.].created_by // "") | test("COPY")) | $m.layers[.].digest' <<<"$config")
   [ "${#wanted[@]}" -gt 0 ] || fail "found no KYBER files in $IMAGE"
   rm -rf "$RUNTIME.new"; mkdir -p "$RUNTIME.new"
   for d in "${wanted[@]}"; do
