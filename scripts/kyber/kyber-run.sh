@@ -39,20 +39,20 @@ TOKEN="$(trim "${AMP_KYBER_TOKEN:-}")"
 
 # Everything this script and its children print reaches the AMP console, and
 # kyber_cli --verbose (Log Level debug/trace) echoes its arguments. Replace the
-# EA login and tokens with **** on the way out. The filter ignores AMP's stop
-# signals so it can still pass on the shutdown messages; it ends at EOF.
-export KYBER_CENSOR="$(printf '%s\n' "$EA_PASS" "$TOKEN" "$EA_TOKEN" "$EA_USER")"
-exec > >(trap '' INT TERM HUP; exec awk '
-  BEGIN { n = split(ENVIRON["KYBER_CENSOR"], secret, "\n") }
-  {
-    for (i = 1; i <= n; i++)
-      if (length(secret[i]) >= 4)
-        while ((p = index($0, secret[i])) > 0)
-          $0 = substr($0, 1, p - 1) "****" substr($0, p + length(secret[i]))
-    print; fflush()
-  }') 2>&1
+# EA login and tokens with **** on the way out. A bash read loop, not awk: the
+# container's mawk buffers piped input, which held console lines back. The
+# filter ignores AMP's stop signals so it can still pass on the shutdown
+# messages; it ends at EOF.
+exec > >(
+  trap '' INT TERM HUP
+  secrets=()
+  for s in "$EA_PASS" "$TOKEN" "$EA_TOKEN" "$EA_USER"; do [ "${#s}" -ge 4 ] && secrets+=("$s"); done
+  while IFS= read -r line || [ -n "$line" ]; do
+    for s in "${secrets[@]}"; do line="${line//"$s"/****}"; done
+    printf '%s\n' "$line"
+  done
+) 2>&1
 CENSOR_PID=$!
-unset KYBER_CENSOR
 
 # ---------- server info ----------
 NAME="$(trim "${AMP_KYBER_SERVER_NAME:-}")"; [ -n "$NAME" ] || fail "Set a server name."
