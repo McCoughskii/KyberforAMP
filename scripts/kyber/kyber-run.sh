@@ -145,7 +145,7 @@ print("%s|%d" % (os.path.basename(out), len(mods)))
 PY
 }
 
-unset KYBER_MOD_FOLDER KYBER_SERVER_PLUGINS_PATH
+unset KYBER_MOD_FOLDER KYBER_SERVER_PLUGINS_PATH KYBER_DEV_PLUGIN_PATH
 if is_true "${AMP_KYBER_USE_MODS:-}"; then
   # kyber_cli loads the collection straight from KYBER_MOD_FOLDER: put the
   # collection file and all of its mods directly in mods/. It needs a
@@ -164,6 +164,29 @@ else
 fi
 if is_true "${AMP_KYBER_USE_PLUGINS:-}"; then
   mkdir -p "$BASE/plugins"; export KYBER_SERVER_PLUGINS_PATH="$BASE/plugins"; log "Plugins folder: $KYBER_SERVER_PLUGINS_PATH"
+fi
+
+# KYBER sends player joins, leaves and chat only to the KYBER API, never to the
+# console, so AMP's user list stays empty. This small built-in plugin prints them
+# as "[KYBER] [info] [AMP] ..." lines for the UserJoin/Leave/Chat regexes.
+# It loads through KYBER_DEV_PLUGIN_PATH, separate from the plugins folder.
+if is_true "${AMP_KYBER_TRACK_PLAYERS:-true}"; then
+  AMP_PLUGIN="$BASE/.amp-plugin"
+  mkdir -p "$AMP_PLUGIN/server"
+  printf '{ "name": "AMP", "minVersion": "2.0.0" }\n' > "$AMP_PLUGIN/plugin.json"
+  cat > "$AMP_PLUGIN/server/__init__.lua" <<'LUA'
+local function id(p) return string.format("%d", p.playerId or 0) end
+EventManager.Listen("ServerPlayer:Joined", function(p)
+    if not p.isBot then print(p.name .. " (" .. id(p) .. ") joined the server") end
+end)
+EventManager.Listen("ServerPlayer:Disconnect", function(p)
+    if not p.isBot then print(p.name .. " (" .. id(p) .. ") left the server") end
+end)
+EventManager.Listen("ServerPlayer:SendMessage", function(p, msg)
+    if p and not p.isBot then print("chat " .. p.name .. ": " .. tostring(msg)) end
+end)
+LUA
+  export KYBER_DEV_PLUGIN_PATH="Z:$(printf '%s' "$AMP_PLUGIN" | tr '/' '\\')"
 fi
 
 # ---------- runtime environment (mirrors the official image) ----------

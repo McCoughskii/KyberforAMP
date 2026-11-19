@@ -36,6 +36,7 @@
       "AMP_KYBER_MAP_ROTATION": "{{MapRotation}}",
       "AMP_KYBER_USE_MODS": "{{UseMods}}",
       "AMP_KYBER_USE_PLUGINS": "{{UsePlugins}}",
+      "AMP_KYBER_TRACK_PLAYERS": "{{TrackPlayers}}",
       "AMP_KYBER_GAME_DIR": "{{GameDir}}",
       "AMP_KYBER_EA_TOKEN": "{{EAToken}}",
       "AMP_KYBER_MODULE_CHANNEL": "{{ModuleChannel}}",
@@ -55,15 +56,15 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "27",
+    "ConfigVersion": "28",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
     "ThrowawayMessageRegex": "^(?:[0-9a-f]{4}:(?:fixme|warn|trace):.*|[0-9a-f]{4}:err:(?:tabtip|winediag|winstation|explorer|systray|ole|wineboot|setupapi|console|combase|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*|wine: (?:configuration in .* has been updated|created the configuration directory).*|.*The explorer process failed to start.*|Could not find Wine Gecko.*|Could not find Wine Mono.*|reg: The operation completed successfully.*)$",
     "AppReadyRegex": "^.*\\[KYBER\\] \\[info\\] \\[Server\\] Server level loaded.*$",
-    "UserJoinRegex": "^.*\\[KYBER\\] \\[info\\] \\[Server\\] (?<username>.+?) \\((?<userid>\\d+)\\) has authenticated and joined the server$",
-    "UserLeaveRegex": "^.*\\[KYBER\\] \\[info\\] \\[Server\\] (?<username>.+?) \\((?<userid>\\d+)\\) left the server$",
-    "UserChatRegex": "^.*\\[KYBER\\] \\[info\\] \\[Server\\] (?!ADMIN:)(?<username>[^ :()]+): (?<message>.+)$",
+    "UserJoinRegex": "^.*\\[KYBER\\] \\[info\\] \\[AMP\\] (?<username>.+?) \\((?<userid>\\d+)\\) joined the server$",
+    "UserLeaveRegex": "^.*\\[KYBER\\] \\[info\\] \\[AMP\\] (?<username>.+?) \\((?<userid>\\d+)\\) left the server$",
+    "UserChatRegex": "^.*\\[KYBER\\] \\[info\\] \\[AMP\\] chat (?<username>.+?): (?<message>.+)$",
     "UpdateAvailableRegex": "^$"
   },
   "PortReferences": {
@@ -83,7 +84,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-install.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-install.sh?cv=27",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-install.sh?cv=28",
       "UpdateSourceArgs": "kyber-install.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -92,7 +93,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-run.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-run.sh?cv=27",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-run.sh?cv=28",
       "UpdateSourceArgs": "kyber-run.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -101,7 +102,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-api.py",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-api.py?cv=27",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-api.py?cv=28",
       "UpdateSourceArgs": "kyber-api.py",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -269,6 +270,21 @@
       "EnumValues": {
         "False": "setting.UsePlugins.value.False",
         "True": "setting.UsePlugins.value.True"
+      }
+    },
+    {
+      "FieldName": "TrackPlayers",
+      "ParamFieldName": "TrackPlayers",
+      "DefaultValue": "true",
+      "Category": "category.kyber:rocket_launch",
+      "Subcategory": "category.mods:extension:5",
+      "DisplayName": "setting.TrackPlayers.name",
+      "Description": "setting.TrackPlayers.desc",
+      "Keywords": "players,users,chat,connected",
+      "InputType": "checkbox",
+      "EnumValues": {
+        "False": "setting.TrackPlayers.value.False",
+        "True": "setting.TrackPlayers.value.True"
       }
     },
     {
@@ -447,6 +463,10 @@
       "setting.UsePlugins.desc": "Uses the `plugins` folder as the KYBER plugins path. Plugins are experimental and unsupported by KYBER.",
       "setting.UsePlugins.value.False": "Disabled",
       "setting.UsePlugins.value.True": "Enabled",
+      "setting.TrackPlayers.name": "Show Players in AMP",
+      "setting.TrackPlayers.desc": "Loads a tiny built-in KYBER plugin that prints player joins, leaves and chat to the console, so AMP's Connected Users list and chat work (KYBER otherwise only sends them to the KYBER launcher). Works whether or not the plugins folder is enabled.",
+      "setting.TrackPlayers.value.False": "Disabled",
+      "setting.TrackPlayers.value.True": "Enabled",
       "setting.GameDir.name": "Game Directory",
       "setting.GameDir.desc": "Folder holding starwarsbattlefrontii.exe, as seen inside the shard. Leave blank for the `battlefront` folder of this server.",
       "setting.VerifyGame.name": "Verify Game Files on Update",

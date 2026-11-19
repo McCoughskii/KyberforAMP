@@ -17,7 +17,7 @@ import pathlib
 HERE = pathlib.Path(__file__).parent
 BRANCH = "dev"
 REPO_RAW = f"https://raw.githubusercontent.com/McCoughskii/KyberforAMP/{BRANCH}"
-CONFIG_VERSION = "27"
+CONFIG_VERSION = "28"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -126,6 +126,11 @@ setting("UseMods", "mods", "Load Mod Collection",
 setting("UsePlugins", "mods", "Enable Plugins Folder",
         "Uses the `plugins` folder as the KYBER plugins path. Plugins are experimental and unsupported by KYBER.",
         itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_USE_PLUGINS", keywords="plugins")
+setting("TrackPlayers", "mods", "Show Players in AMP",
+        "Loads a tiny built-in KYBER plugin that prints player joins, leaves and chat to the console, so AMP's "
+        "Connected Users list and chat work (KYBER otherwise only sends them to the KYBER launcher). "
+        "Works whether or not the plugins folder is enabled.",
+        itype="checkbox", default="true", enum=BOOL, env_name="AMP_KYBER_TRACK_PLAYERS", keywords="players,users,chat,connected")
 
 setting("GameDir", "game", "Game Directory",
         "Folder holding starwarsbattlefrontii.exe, as seen inside the shard. Leave blank for the `battlefront` folder of this server.",
@@ -226,9 +231,9 @@ spec = {
         "ThrowawayMessageRegex": WINE_NOISE,
         # Printed by the KYBER module once the first map of the rotation is up.
         "AppReadyRegex": r"^.*\[KYBER\] \[info\] \[Server\] Server level loaded.*$",
-        "UserJoinRegex": r"^.*\[KYBER\] \[info\] \[Server\] (?<username>.+?) \((?<userid>\d+)\) has authenticated and joined the server$",
-        "UserLeaveRegex": r"^.*\[KYBER\] \[info\] \[Server\] (?<username>.+?) \((?<userid>\d+)\) left the server$",
-        "UserChatRegex": r"^.*\[KYBER\] \[info\] \[Server\] (?!ADMIN:)(?<username>[^ :()]+): (?<message>.+)$",
+        "UserJoinRegex": r"^.*\[KYBER\] \[info\] \[AMP\] (?<username>.+?) \((?<userid>\d+)\) joined the server$",
+        "UserLeaveRegex": r"^.*\[KYBER\] \[info\] \[AMP\] (?<username>.+?) \((?<userid>\d+)\) left the server$",
+        "UserChatRegex": r"^.*\[KYBER\] \[info\] \[AMP\] chat (?<username>.+?): (?<message>.+)$",
         "UpdateAvailableRegex": "^$",
     },
     "PortReferences": {
