@@ -205,6 +205,7 @@ if [ -f "$API" ] && command -v python3 >/dev/null; then
   while kill -0 "$kpid" 2>/dev/null; do
     if IFS= read -r -t 1 line; then
       line="$(trim "$line")"; [ -z "$line" ] && continue
+      log "> $line"
       case "$line" in
         admins|/admins) python3 "$API" admins ;;
         *) python3 "$API" run "$line" ;;

@@ -261,7 +261,7 @@ def main(argv):
                 # The id changes when the server restarts; look it up again once.
                 sid = server_id(state, auth, uid)
                 call("kyber_api.ServerManagement/RunCommand", pb_str(1, sid) + pb_str(2, text), auth=auth)
-            print("[KYBER] > %s" % text)
+            print("[KYBER] Sent to server.")
         elif cmd == "admins":
             sid = state.get("server_id") or server_id(state, auth, uid)
             r = call("kyber_api.ServerManagement/GetModerators", pb_str(1, sid), auth=auth)

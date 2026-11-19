@@ -11,7 +11,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "8"
+CONFIG_VERSION = "9"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -145,7 +145,8 @@ def fetch(name):
         "UpdateSource": "FetchURL",
         "UpdateStageName": f"Download {name}",
         "UpdateSourcePlatform": "Linux",
-        "UpdateSourceData": f"{REPO_RAW}/scripts/kyber/{name}",
+        # ?cv= changes with every template version so GitHub's raw cache never serves an old script.
+        "UpdateSourceData": f"{REPO_RAW}/scripts/kyber/{name}?cv={CONFIG_VERSION}",
         "UpdateSourceArgs": name,
         "UpdateSourceTarget": "{{$FullRootDir}}scripts",
         "OverwriteExistingFiles": True,
