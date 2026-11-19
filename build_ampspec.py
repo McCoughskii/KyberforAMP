@@ -17,7 +17,7 @@ import pathlib
 HERE = pathlib.Path(__file__).parent
 BRANCH = "dev"
 REPO_RAW = f"https://raw.githubusercontent.com/McCoughskii/KyberforAMP/{BRANCH}"
-CONFIG_VERSION = "25"
+CONFIG_VERSION = "27"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -44,7 +44,7 @@ settings = []
 
 WINE_NOISE = (
     r"^(?:[0-9a-f]{4}:(?:fixme|warn|trace):.*"
-    r"|[0-9a-f]{4}:err:(?:winediag|winstation|explorer|systray|ole|wineboot|setupapi|console|combase|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*"
+    r"|[0-9a-f]{4}:err:(?:tabtip|winediag|winstation|explorer|systray|ole|wineboot|setupapi|console|combase|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*"
     r"|wine: (?:configuration in .* has been updated|created the configuration directory).*"
     r"|.*The explorer process failed to start.*"
     r"|Could not find Wine Gecko.*|Could not find Wine Mono.*"

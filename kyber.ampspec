@@ -55,11 +55,11 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "25",
+    "ConfigVersion": "27",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
-    "ThrowawayMessageRegex": "^(?:[0-9a-f]{4}:(?:fixme|warn|trace):.*|[0-9a-f]{4}:err:(?:winediag|winstation|explorer|systray|ole|wineboot|setupapi|console|combase|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*|wine: (?:configuration in .* has been updated|created the configuration directory).*|.*The explorer process failed to start.*|Could not find Wine Gecko.*|Could not find Wine Mono.*|reg: The operation completed successfully.*)$",
+    "ThrowawayMessageRegex": "^(?:[0-9a-f]{4}:(?:fixme|warn|trace):.*|[0-9a-f]{4}:err:(?:tabtip|winediag|winstation|explorer|systray|ole|wineboot|setupapi|console|combase|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*|wine: (?:configuration in .* has been updated|created the configuration directory).*|.*The explorer process failed to start.*|Could not find Wine Gecko.*|Could not find Wine Mono.*|reg: The operation completed successfully.*)$",
     "AppReadyRegex": "^.*\\[KYBER\\] \\[info\\] \\[Server\\] Server level loaded.*$",
     "UserJoinRegex": "^.*\\[KYBER\\] \\[info\\] \\[Server\\] (?<username>.+?) \\((?<userid>\\d+)\\) has authenticated and joined the server$",
     "UserLeaveRegex": "^.*\\[KYBER\\] \\[info\\] \\[Server\\] (?<username>.+?) \\((?<userid>\\d+)\\) left the server$",
@@ -83,7 +83,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-install.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-install.sh?cv=25",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-install.sh?cv=27",
       "UpdateSourceArgs": "kyber-install.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -92,7 +92,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-run.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-run.sh?cv=25",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-run.sh?cv=27",
       "UpdateSourceArgs": "kyber-run.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -101,7 +101,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-api.py",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-api.py?cv=25",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-api.py?cv=27",
       "UpdateSourceArgs": "kyber-api.py",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
