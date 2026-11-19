@@ -42,12 +42,17 @@ TOKEN="$(trim "${AMP_KYBER_TOKEN:-}")"
 # EA login and tokens with **** on the way out. A bash read loop, not awk: the
 # container's mawk buffers piped input, which held console lines back. The
 # filter ignores AMP's stop signals so it can still pass on the shutdown
-# messages; it ends at EOF.
+# messages; it ends at EOF. It also swallows the built-in plugin's heartbeat
+# lines, touching $HEARTBEAT instead so the crash watchdog can spot a frozen game.
+WATCH_DIR="$BASE/.watchdog"
+HEARTBEAT="$WATCH_DIR/heartbeat"
+rm -rf "$WATCH_DIR"; mkdir -p "$WATCH_DIR"
 exec > >(
   trap '' INT TERM HUP
   secrets=()
   for s in "$EA_PASS" "$TOKEN" "$EA_TOKEN" "$EA_USER"; do [ "${#s}" -ge 4 ] && secrets+=("$s"); done
   while IFS= read -r line || [ -n "$line" ]; do
+    if [[ "$line" == *"[KYBER] [info] [AMP] heartbeat" ]]; then : > "$HEARTBEAT"; continue; fi
     for s in "${secrets[@]}"; do line="${line//"$s"/****}"; done
     printf '%s\n' "$line"
   done
@@ -100,7 +105,7 @@ export KYBER_MAP_ROTATION="$(printf '%s' "$LINES" | base64 -w0)"
 log "Map rotation: $count entries"
 while IFS= read -r line; do [ -n "$line" ] && [ "${line:0:1}" != "#" ] && log "  $line"; done <<< "$LINES"
 
-# ---------- optional ----------
+# ---------- mods, plugins and module options ----------
 CHANNEL="$(trim "${AMP_KYBER_MODULE_CHANNEL:-default}")"
 [ "$CHANNEL" = "custom" ] && CHANNEL="$(trim "${AMP_KYBER_MODULE_CHANNEL_CUSTOM:-}")"
 if [ -n "$CHANNEL" ] && [ "$CHANNEL" != "default" ]; then export KYBER_MODULE_CHANNEL="$CHANNEL"; else unset KYBER_MODULE_CHANNEL; fi
@@ -145,13 +150,24 @@ print("%s|%d" % (os.path.basename(out), len(mods)))
 PY
 }
 
-unset KYBER_MOD_FOLDER KYBER_SERVER_PLUGINS_PATH
+unset KYBER_MOD_FOLDER KYBER_SERVER_PLUGINS_PATH KYBER_DEV_PLUGIN_PATH
 if is_true "${AMP_KYBER_USE_MODS:-}"; then
   # kyber_cli loads the collection straight from KYBER_MOD_FOLDER: put the
-  # collection file and all of its mods directly in mods-previous/. It needs a
+  # collection file and all of its mods directly in mods/. It needs a
   # .kbcollection there; if there is only a Frosty .fbcollection, one is made
   # from it once (replace it with the launcher's own any time).
-  export KYBER_MOD_FOLDER="$BASE/mods-previous"
+  # A folder is usable if it has a .kbcollection, or a .fbcollection next to its
+  # .fbmod files. Older versions of this template used mods-previous/, so fall
+  # back to it while mods/ has no usable collection.
+  has_collection() {
+    compgen -G "$1/*.kbcollection" >/dev/null && return 0
+    compgen -G "$1/*.fbcollection" >/dev/null && compgen -G "$1/*.fbmod" >/dev/null
+  }
+  export KYBER_MOD_FOLDER="$BASE/mods"
+  if ! has_collection "$BASE/mods" && has_collection "$BASE/mods-previous"; then
+    KYBER_MOD_FOLDER="$BASE/mods-previous"
+    log "No collection in mods/, using the one in mods-previous/ (move it into mods/ any time)."
+  fi
   mkdir -p "$KYBER_MOD_FOLDER"
   shopt -s nullglob; kb=("$KYBER_MOD_FOLDER"/*.kbcollection); fb=("$KYBER_MOD_FOLDER"/*.fbcollection); shopt -u nullglob
   if [ "${#kb[@]}" -eq 0 ] && [ "${#fb[@]}" -eq 1 ]; then
@@ -164,6 +180,36 @@ else
 fi
 if is_true "${AMP_KYBER_USE_PLUGINS:-}"; then
   mkdir -p "$BASE/plugins"; export KYBER_SERVER_PLUGINS_PATH="$BASE/plugins"; log "Plugins folder: $KYBER_SERVER_PLUGINS_PATH"
+fi
+
+# KYBER sends player joins, leaves and chat only to the KYBER API, never to the
+# console, so AMP's user list stays empty. This small built-in plugin prints them
+# as "[KYBER] [info] [AMP] ..." lines for the UserJoin/Leave/Chat regexes.
+# It loads through KYBER_DEV_PLUGIN_PATH, separate from the plugins folder.
+if is_true "${AMP_KYBER_TRACK_PLAYERS:-true}"; then
+  AMP_PLUGIN="$BASE/.amp-plugin"
+  mkdir -p "$AMP_PLUGIN/server"
+  printf '{ "name": "AMP", "minVersion": "2.0.0" }\n' > "$AMP_PLUGIN/plugin.json"
+  cat > "$AMP_PLUGIN/server/__init__.lua" <<'LUA'
+local function id(p) return string.format("%d", p.playerId or 0) end
+EventManager.Listen("ServerPlayer:Joined", function(p)
+    if not p.isBot then print(p.name .. " (" .. id(p) .. ") joined the server") end
+end)
+EventManager.Listen("ServerPlayer:Disconnect", function(p)
+    if not p.isBot then print(p.name .. " (" .. id(p) .. ") left the server") end
+end)
+EventManager.Listen("ServerPlayer:SendMessage", function(p, msg)
+    if p and not p.isBot then print("chat " .. p.name .. ": " .. tostring(msg)) end
+end)
+-- Heartbeat every 30 s of server time; the run script's crash watchdog uses it
+-- to notice a frozen game. The console filter hides these lines.
+local sinceBeat = 0
+EventManager.Listen("Server:UpdatePre", function(dt)
+    sinceBeat = sinceBeat + dt
+    if sinceBeat >= 30 then sinceBeat = 0; print("heartbeat") end
+end)
+LUA
+  export KYBER_DEV_PLUGIN_PATH="Z:$(printf '%s' "$AMP_PLUGIN" | tr '/' '\\')"
 fi
 
 # ---------- runtime environment (mirrors the official image) ----------
@@ -201,10 +247,10 @@ if [ ! -f "$WINEPREFIX/system.reg" ]; then
   "$WINE" wineboot --init >/dev/null 2>&1 || warn "wineboot reported an error; continuing"
 fi
 
-# With an EA token session kyber_cli launches the game in "Online" mode, where
-# maxima only treats the game as installed if the registry entry the game's own
-# installer (touchup) would write is present. That installer cannot run headless,
-# so register the install ourselves (same key as __Installer/installerdata.xml).
+# Maxima launches the game in "Online" mode, where it only treats the game as
+# installed if the registry entry the game's own installer (touchup) would write
+# is present. That installer cannot run headless, so register the install
+# ourselves (same key as __Installer/installerdata.xml).
 WIN_GAME_DIR="Z:$(printf '%s' "${GAME_DIR%/}" | tr '/' '\\')\\"
 for view in 64 32; do
   "$WINE" reg add 'HKLM\Software\EA Games\STAR WARS Battlefront II' /v 'Install Dir' /d "$WIN_GAME_DIR" /f "/reg:$view" >/dev/null 2>&1 \
@@ -245,6 +291,7 @@ set +m
 stopping=0
 stop_server() {
   [ "$stopping" = 1 ] && return; stopping=1
+  : > "$WATCH_DIR/stopping"   # tells the crash watchdog this is not a crash
   log "Stopping KYBER server ..."
   kill -INT "$kpid" 2>/dev/null
   for _ in $(seq 1 10); do kill -0 "$kpid" 2>/dev/null || return; sleep 1; done
@@ -256,6 +303,55 @@ stop_server() {
   "$WINESERVER" -k9 >/dev/null 2>&1
 }
 trap stop_server INT TERM HUP
+
+# ---------- crash watchdog ----------
+# kyber_cli only exits when the game's EA (LSX) connection closes, so a crashed
+# or frozen game can leave it running and AMP showing "Running" with no server.
+# Turn every crash into a clear console message and a failed exit so AMP
+# restarts the server:
+#  - KYBER's crash handler updated its Sentry last_crash marker;
+#  - the game process is gone while kyber_cli is still running;
+#  - no heartbeat from the built-in plugin for Freeze Timeout seconds.
+FREEZE_TIMEOUT="$(trim "${AMP_KYBER_FREEZE_TIMEOUT:-180}")"
+case "$FREEZE_TIMEOUT" in ''|*[!0-9]*) FREEZE_TIMEOUT=180 ;; esac
+[ -n "${KYBER_DEV_PLUGIN_PATH:-}" ] || FREEZE_TIMEOUT=0   # no plugin, no heartbeat
+crash_marker() { stat -c %Y "$WINEPREFIX"/drive_c/users/*/AppData/Roaming/ArmchairDevelopers/Kyber/ModuleData/Sentry/last_crash 2>/dev/null | sort -n | tail -n1; }
+watchdog() {
+  local marker seen=0 gone=0 reason age
+  marker="$(crash_marker)"
+  while kill -0 "$kpid" 2>/dev/null; do
+    sleep 5
+    [ -f "$WATCH_DIR/stopping" ] && return
+    reason=""
+    if [ "$(crash_marker)" != "$marker" ]; then
+      reason="the game crashed (KYBER's crash handler fired)"
+    elif game_running; then
+      seen=1; gone=0
+    elif [ "$seen" = 1 ]; then
+      gone=$((gone + 5)); [ "$gone" -ge 20 ] && reason="the game process ended but kyber_cli kept running"
+    fi
+    if [ -z "$reason" ] && [ "$FREEZE_TIMEOUT" -gt 0 ] && [ -f "$HEARTBEAT" ]; then
+      age=$(( $(date +%s) - $(stat -c %Y "$HEARTBEAT" 2>/dev/null || date +%s) ))
+      [ "$age" -ge "$FREEZE_TIMEOUT" ] && reason="the game stopped responding (no server tick for ${age}s)"
+    fi
+    [ -f "$WATCH_DIR/stopping" ] && return
+    if [ -n "$reason" ]; then
+      printf '%s\n' "$reason" > "$WATCH_DIR/crashed"
+      warn "CRASH DETECTED: $reason. Stopping the server so AMP restarts it."
+      kill -INT "$kpid" 2>/dev/null
+      for _ in $(seq 1 10); do kill -0 "$kpid" 2>/dev/null || break; sleep 1; done
+      close_game >/dev/null 2>&1
+      kill -TERM "$kpid" 2>/dev/null
+      return
+    fi
+  done
+}
+if is_true "${AMP_KYBER_CRASH_WATCHDOG:-true}"; then
+  watchdog &
+  WATCHDOG_PID=$!
+  [ "$FREEZE_TIMEOUT" -gt 0 ] && log "Crash watchdog on (freeze timeout ${FREEZE_TIMEOUT}s)." \
+    || log "Crash watchdog on (freeze detection off: needs Show Players in AMP and a Freeze Timeout above 0)."
+fi
 
 if [ -f "$API" ] && command -v python3 >/dev/null; then
   # Admin sync once the server has registered (waits up to 5 minutes).
@@ -292,9 +388,21 @@ else
 fi
 wait "$kpid"; rc=$?
 log "KYBER server exited with code $rc"
+[ -n "${WATCHDOG_PID:-}" ] && { kill "$WATCHDOG_PID" 2>/dev/null; wait "$WATCHDOG_PID" 2>/dev/null; }
 if game_running; then
   log "Closing the game ..."
   close_game || warn "the game did not close. Use Stop, wait for Stopped, then Start."
+fi
+# A game crash that ends kyber_cli on its own is also a crash. AMP's Stop and
+# Restart signal kyber_cli directly (exit 130/143/137), which is not.
+case "$rc" in 130|143|137) stopped_by_signal=1 ;; *) stopped_by_signal=0 ;; esac
+if [ ! -f "$WATCH_DIR/crashed" ] && [ ! -f "$WATCH_DIR/stopping" ] && [ "$stopping" = 0 ] && [ "$stopped_by_signal" = 0 ]; then
+  printf 'the game exited without a stop request (exit code %s)\n' "$rc" > "$WATCH_DIR/crashed"
+  warn "CRASH DETECTED: the server ended without a stop request (exit code $rc)."
+fi
+if [ -f "$WATCH_DIR/crashed" ]; then
+  warn "Server crashed: $(cat "$WATCH_DIR/crashed"). KYBER's log is in the Wine prefix under AppData/Roaming/ArmchairDevelopers/Kyber/Logs."
+  rc=1
 fi
 exec >&- 2>&-; wait "$CENSOR_PID" 2>/dev/null   # let the console filter print its last lines
 exit "$rc"

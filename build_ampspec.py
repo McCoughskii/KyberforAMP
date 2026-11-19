@@ -1,26 +1,35 @@
 """Generates kyber.ampspec (AMP3 template) next to this file.
 
-Run:  python build_ampspec.py
+Run:  python3 build_ampspec.py   (after any change here, and commit both files)
 The repo layout this expects (and AMP3 reads):
     kyber.ampspec
     scripts/kyber/kyber-install.sh
     scripts/kyber/kyber-run.sh
+    scripts/kyber/kyber-api.py
+
+Bump CONFIG_VERSION with every change: it is the template version AMP shows
+and the ?cv= on the script URLs. BRANCH is the branch AMP downloads the
+scripts from; keep it matching the branch this file is committed to.
 """
 import json
 import pathlib
 
 HERE = pathlib.Path(__file__).parent
-REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "24"
+BRANCH = "main"
+REPO_RAW = f"https://raw.githubusercontent.com/McCoughskii/KyberforAMP/{BRANCH}"
+CONFIG_VERSION = "30"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
     "accounts": ("category.accounts:key:1", "Accounts"),
     "server": ("category.server:dns:2", "Server"),
-    "rotation": ("category.rotation:map:3", "Map Rotation"),
-    "mods": ("category.mods:extension:4", "Mods & Plugins"),
-    "game": ("category.game:download:5", "Game Files"),
-    "advanced": ("category.advanced:tune:6", "Advanced"),
+    "admins": ("category.admins:admin_panel_settings:3", "Admins"),
+    "rotation": ("category.rotation:map:4", "Map Rotation"),
+    "mods": ("category.mods:extension:5", "Mods & Plugins"),
+    "game": ("category.game:download:6", "Game Files"),
+    "module": ("category.module:memory:7", "KYBER Module"),
+    "logging": ("category.logging:bug_report:8", "Logging & Debug"),
+    "runtime": ("category.runtime:deployed_code:9", "Runtime (Advanced)"),
 }
 
 locale = {
@@ -35,7 +44,7 @@ settings = []
 
 WINE_NOISE = (
     r"^(?:[0-9a-f]{4}:(?:fixme|warn|trace):.*"
-    r"|[0-9a-f]{4}:err:(?:winediag|winstation|explorer|systray|ole|wineboot|setupapi|console|combase|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*"
+    r"|[0-9a-f]{4}:err:(?:tabtip|winediag|winstation|explorer|systray|ole|wineboot|setupapi|console|combase|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*"
     r"|wine: (?:configuration in .* has been updated|created the configuration directory).*"
     r"|.*The explorer process failed to start.*"
     r"|Could not find Wine Gecko.*|Could not find Wine Mono.*"
@@ -89,12 +98,12 @@ setting("ServerDescription", "server", "Server Description",
         itype="Textarea", env_name="AMP_KYBER_SERVER_DESCRIPTION", keywords="description,motd,rules")
 setting("ServerPassword", "server", "Server Password", "Password players must enter to join. Leave blank for a public server.",
         itype="Password", env_name="AMP_KYBER_SERVER_PASSWORD", keywords="password,private")
-setting("Admins", "server", "Server Admins",
+setting("Admins", "admins", "Server Admins",
         "KYBER/EA usernames or user IDs to make admins (KYBER moderators) of this server, one per line. "
         "They are added once the server has registered with KYBER, and can then moderate it from the KYBER launcher. "
         "Type `admins` in the console to list the current admins.",
         itype="Textarea", env_name="AMP_KYBER_ADMINS", keywords="admin,admins,moderator,mod,staff,permissions")
-setting("AdminsExclusive", "server", "Only These Admins",
+setting("AdminsExclusive", "admins", "Only These Admins",
         "Also remove admins that are not in the list above (for example ones added from the KYBER launcher).",
         itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_ADMINS_EXCLUSIVE", keywords="admin,moderator,remove")
 setting("MaxPlayers", "server", "Max Players", "Maximum number of players (1-64).",
@@ -109,18 +118,28 @@ setting("MapRotation", "rotation", "Map Rotation",
         keywords="map,rotation,mode,level")
 
 setting("UseMods", "mods", "Load Mod Collection",
-        "Loads a KYBER mod collection (for example Battlefront Plus) from the `mods-previous` folder. "
-        "Upload the collection file and all of its mods directly into `mods-previous` with the File Manager and restart. "
+        "Loads a KYBER mod collection (for example Battlefront Plus) from the `mods` folder (or `mods-previous`, if only that one has a collection). "
+        "Upload the collection file (.kbcollection, or the .fbcollection from the launcher's mods folder) and all of its "
+        "mods directly into `mods` with the File Manager and restart. "
         "Players need the same collection to join.",
         itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_USE_MODS", keywords="mods,collection,battlefront plus,modpack")
 setting("UsePlugins", "mods", "Enable Plugins Folder",
         "Uses the `plugins` folder as the KYBER plugins path. Plugins are experimental and unsupported by KYBER.",
         itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_USE_PLUGINS", keywords="plugins")
+setting("TrackPlayers", "mods", "Show Players in AMP",
+        "Loads a tiny built-in KYBER plugin that prints player joins, leaves and chat to the console, so AMP's "
+        "Connected Users list and chat work (KYBER otherwise only sends them to the KYBER launcher). "
+        "Works whether or not the plugins folder is enabled.",
+        itype="checkbox", default="true", enum=BOOL, env_name="AMP_KYBER_TRACK_PLAYERS", keywords="players,users,chat,connected")
+setting("CrashWatchdog", "game", "Crash Watchdog",
+        "Watches for a crashed or frozen game while KYBER keeps running, prints CRASH DETECTED in the console and "
+        "stops the server with an error so AMP restarts it.",
+        itype="checkbox", default="true", enum=BOOL, env_name="AMP_KYBER_CRASH_WATCHDOG", keywords="crash,watchdog,freeze,hang,restart")
+setting("FreezeTimeout", "game", "Freeze Timeout (seconds)",
+        "Treat the game as frozen after this many seconds without a server tick. Needs Show Players in AMP "
+        "(its plugin sends the tick). 0 turns freeze detection off.",
+        itype="number", default="180", env_name="AMP_KYBER_FREEZE_TIMEOUT", keywords="crash,freeze,hang,timeout")
 
-setting("EAToken", "game", "EA Token (game download only)",
-        "Only needed to download or verify the game files on Update. Create one with `kyber_cli get_ea_token`; "
-        "EA tokens expire quickly, so paste a fresh one right before updating. The server itself logs in with the EA email and password.",
-        itype="Password", env_name="AMP_KYBER_EA_TOKEN", keywords="ea,token,download,verify")
 setting("GameDir", "game", "Game Directory",
         "Folder holding starwarsbattlefrontii.exe, as seen inside the shard. Leave blank for the `battlefront` folder of this server.",
         env_name="AMP_KYBER_GAME_DIR", keywords="game,path,directory,install")
@@ -128,21 +147,25 @@ setting("VerifyGame", "game", "Verify Game Files on Update",
         "Re-run the EA download on every Update to check and repair the game files. Needs a fresh EA token. "
         "When disabled, Update skips the download once starwarsbattlefrontii.exe is in the game folder.",
         itype="checkbox", default="false", enum=BOOL, keywords="verify,repair,download,game,update")
+setting("EAToken", "game", "EA Token (game download only)",
+        "Only needed to download or verify the game files on Update. Create one with `kyber_cli get_ea_token`; "
+        "EA tokens expire quickly, so paste a fresh one right before updating. The server itself logs in with the EA email and password.",
+        itype="Password", env_name="AMP_KYBER_EA_TOKEN", keywords="ea,token,download,verify")
 
-setting("ModuleChannel", "advanced", "KYBER Module Channel", "Release channel of the KYBER module the server loads.",
+setting("ModuleChannel", "module", "KYBER Module Channel", "Release channel of the KYBER module the server loads.",
         itype="enum", default="default", env_name="AMP_KYBER_MODULE_CHANNEL", keywords="module,channel,beta,version",
         enum={"default": "Default", "stable": "stable", "custom": "Custom (set below)"})
-setting("ModuleChannelCustom", "advanced", "Custom Module Channel", "Used when the channel above is Custom, e.g. `ver/beta10`.",
+setting("ModuleChannelCustom", "module", "Custom Module Channel", "Used when the channel above is Custom, e.g. `ver/beta10`.",
         env_name="AMP_KYBER_MODULE_CHANNEL_CUSTOM", keywords="module,channel,version", Placeholder="ver/beta10")
-setting("LogLevel", "advanced", "Log Level", "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose. The EA login and tokens are replaced with **** in the console.",
+setting("LogLevel", "logging", "Log Level", "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose. The EA login and tokens are replaced with **** in the console.",
         itype="enum", default="info", env_name="AMP_KYBER_LOG_LEVEL", keywords="log,debug,trace",
         enum={"info": "info", "debug": "debug", "trace": "trace"})
-setting("MaximaDebug", "advanced", "Maxima Debug Output", "Adds --debug to kyber_cli for troubleshooting EA login problems.",
+setting("MaximaDebug", "logging", "Maxima Debug Output", "Adds --debug to kyber_cli for troubleshooting EA login problems.",
         itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_MAXIMA_DEBUG", keywords="debug,maxima")
-setting("KyberImage", "advanced", "KYBER Image (runtime source)",
+setting("KyberImage", "runtime", "KYBER Image (runtime source)",
         "The KYBER files (kyber_cli, maxima, module) are taken from this image on every Update.",
         default="ghcr.io/armchairdevelopers/kyber-server:latest", keywords="image,docker,runtime,version")
-setting("WineUrl", "advanced", "Wine Build URL", "Wine build used to run the server. Default is the GE-Proton8-26 build KYBER ships.",
+setting("WineUrl", "runtime", "Wine Build URL", "Wine build used to run the server. Default is the GE-Proton8-26 build KYBER ships.",
         default="https://github.com/GloriousEggroll/wine-ge-custom/releases/download/GE-Proton8-26/wine-lutris-GE-Proton8-26-x86_64.tar.xz",
         keywords="wine,proton,ge")
 setting("$MaxUsers", "server", "Maximum Users (AMP)", "Player limit AMP uses for its own statistics.",
@@ -154,7 +177,8 @@ def fetch(name):
         "UpdateSource": "FetchURL",
         "UpdateStageName": f"Download {name}",
         "UpdateSourcePlatform": "Linux",
-        # ?cv= changes with every template version so GitHub's raw cache never serves an old script.
+        # ?cv= changes with every template version. GitHub's raw cache can still
+        # serve the previous file for ~5 minutes after a push.
         "UpdateSourceData": f"{REPO_RAW}/scripts/kyber/{name}?cv={CONFIG_VERSION}",
         "UpdateSourceArgs": name,
         "UpdateSourceTarget": "{{$FullRootDir}}scripts",
@@ -215,9 +239,9 @@ spec = {
         "ThrowawayMessageRegex": WINE_NOISE,
         # Printed by the KYBER module once the first map of the rotation is up.
         "AppReadyRegex": r"^.*\[KYBER\] \[info\] \[Server\] Server level loaded.*$",
-        "UserJoinRegex": r"^.*\[KYBER\] \[info\] \[Server\] (?<username>.+?) \((?<userid>\d+)\) has authenticated and joined the server$",
-        "UserLeaveRegex": r"^.*\[KYBER\] \[info\] \[Server\] (?<username>.+?) \((?<userid>\d+)\) left the server$",
-        "UserChatRegex": r"^.*\[KYBER\] \[info\] \[Server\] (?!ADMIN:)(?<username>[^ :()]+): (?<message>.+)$",
+        "UserJoinRegex": r"^.*\[KYBER\] \[info\] \[AMP\] (?<username>.+?) \((?<userid>\d+)\) joined the server$",
+        "UserLeaveRegex": r"^.*\[KYBER\] \[info\] \[AMP\] (?<username>.+?) \((?<userid>\d+)\) left the server$",
+        "UserChatRegex": r"^.*\[KYBER\] \[info\] \[AMP\] chat (?<username>.+?): (?<message>.+)$",
         "UpdateAvailableRegex": "^$",
     },
     "PortReferences": {
@@ -252,8 +276,6 @@ spec = {
         "wine.new/",
         "runtime/",
         "runtime.new/",
-        "cli/",
-        "logs/",
         ".kyber-tmp/",
         ".kyber-api/",
         "mod-archives/",
@@ -266,5 +288,6 @@ spec = {
 }
 
 out = HERE / "kyber.ampspec"
-out.write_text(json.dumps(spec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+with open(out, "w", encoding="utf-8", newline="\n") as f:   # newline= needs open(), not Path.write_text, on Python < 3.10
+    f.write(json.dumps(spec, indent=2, ensure_ascii=False) + "\n")
 print("Wrote", out, "-", len(settings), "settings,", len(env), "env vars")
