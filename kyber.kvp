@@ -1,0 +1,26 @@
+Meta.DisplayName=Kyber (Star Wars Battlefront II)
+Meta.Description=Kyber dedicated server for Star Wars Battlefront II, run via the official Kyber Docker image
+Meta.OS=Linux
+Meta.Arch=x86_64
+Meta.Author=Personal
+Meta.URL=https://kyber.gg
+Meta.EndpointURIFormat=
+Meta.ConfigManifest=kyberconfig.json
+Meta.ConfigRoot=kyber.kvp
+Meta.MinAMPVersion=2.4.0.8
+Meta.DockerRequired=False
+Meta.ContainerPolicy=NotSupported
+Meta.ContainerPolicyReason=The server is itself a Docker container. Running it inside an AMP container would need Docker-in-Docker, so run the instance directly on the host.
+Meta.NoCommercialUsage=False
+App.DisplayName=Kyber Dedicated Server
+App.RootDir=./kyber/
+App.BaseDirectory=./kyber/
+App.WorkingDir=./kyber/
+App.ExecutableLinux=/usr/bin/docker
+App.LinuxCommandLineArgs=run --rm -i --network host -v {{$FullBaseDir}}battlefront:/mnt/battlefront -v {{$FullBaseDir}}mods:/mnt/battlefront/mods
+App.CommandLineArgs={{$PlatformArgs}} {{$FormattedArgs}} registry.kyber.gg/kyber-server:latest
+App.CommandLineParameterFormat=-e {0}="{1}"
+App.UseLinuxIOREDIR=False
+App.AppSettings={}
+App.EnvironmentVariables={}
+App.UpdateSources=[{"UpdateStageName":"Pull Kyber server image","UpdateSourcePlatform":"Linux","UpdateSource":"Executable","UpdateSourceData":"/usr/bin/docker","UpdateSourceArgs":"pull registry.kyber.gg/kyber-server:latest"}]
