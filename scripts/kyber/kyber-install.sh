@@ -114,6 +114,9 @@ if [ -n "$EA_TOKEN" ]; then
   ( cd "$RUNTIME/opt/kyber" && KYBER_BYPASS_DOCKER_I_REALLY_KNOW_WHAT_I_AM_DOING=1 \
       exec ./kyber_cli download_game -p "$GAME_DIR" -t "$EA_TOKEN" ) >"$DL_LOG" 2>&1 &
   dl_pid=$!
+  # If AMP aborts the update, take kyber_cli down with us instead of orphaning it.
+  stop_download() { kill "$dl_pid" 2>/dev/null; sleep 2; kill -9 "$dl_pid" 2>/dev/null; }
+  trap 'stop_download; rm -rf "$TMP"; echo "[KYBER] Update aborted."; exit 130' TERM INT HUP
   tail -n +1 -f --pid="$dl_pid" "$DL_LOG" | tr '\r' '\n' | awk '
       match($0, /\(([0-9]+)(\.[0-9]+)?%\)/) {
         p = int(substr($0, RSTART + 1, RLENGTH - 3) / 5) * 5
@@ -131,12 +134,13 @@ if [ -n "$EA_TOKEN" ]; then
     fi
     if [ "$done_at" != 0 ] && [ $((SECONDS - done_at)) -ge 30 ]; then
       log "kyber_cli is still open after finishing; closing it."
-      kill "$dl_pid" 2>/dev/null; sleep 5; kill -9 "$dl_pid" 2>/dev/null
+      stop_download
       break
     fi
   done
   wait "$dl_pid" 2>/dev/null; dl_rc=$?
   wait "$show_pid" 2>/dev/null
+  trap - TERM INT HUP
   [ "$done_at" != 0 ] && dl_rc=0
   [ "$dl_rc" -eq 0 ] \
     || fail "game download failed. EA tokens expire quickly - create a fresh one with 'kyber_cli get_ea_token' and update again."
