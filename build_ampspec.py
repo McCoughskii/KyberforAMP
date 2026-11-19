@@ -17,16 +17,19 @@ import pathlib
 HERE = pathlib.Path(__file__).parent
 BRANCH = "dev"
 REPO_RAW = f"https://raw.githubusercontent.com/McCoughskii/KyberforAMP/{BRANCH}"
-CONFIG_VERSION = "18"
+CONFIG_VERSION = "19"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
     "accounts": ("category.accounts:key:1", "Accounts"),
     "server": ("category.server:dns:2", "Server"),
-    "rotation": ("category.rotation:map:3", "Map Rotation"),
-    "mods": ("category.mods:extension:4", "Mods & Plugins"),
-    "game": ("category.game:download:5", "Game Files"),
-    "advanced": ("category.advanced:tune:6", "Advanced"),
+    "admins": ("category.admins:admin_panel_settings:3", "Admins"),
+    "rotation": ("category.rotation:map:4", "Map Rotation"),
+    "mods": ("category.mods:extension:5", "Mods & Plugins"),
+    "game": ("category.game:download:6", "Game Files"),
+    "module": ("category.module:memory:7", "KYBER Module"),
+    "logging": ("category.logging:bug_report:8", "Logging & Debug"),
+    "runtime": ("category.runtime:deployed_code:9", "Runtime (Advanced)"),
 }
 
 locale = {
@@ -95,12 +98,12 @@ setting("ServerDescription", "server", "Server Description",
         itype="Textarea", env_name="AMP_KYBER_SERVER_DESCRIPTION", keywords="description,motd,rules")
 setting("ServerPassword", "server", "Server Password", "Password players must enter to join. Leave blank for a public server.",
         itype="Password", env_name="AMP_KYBER_SERVER_PASSWORD", keywords="password,private")
-setting("Admins", "server", "Server Admins",
+setting("Admins", "admins", "Server Admins",
         "KYBER/EA usernames or user IDs to make admins (KYBER moderators) of this server, one per line. "
         "They are added once the server has registered with KYBER, and can then moderate it from the KYBER launcher. "
         "Type `admins` in the console to list the current admins.",
         itype="Textarea", env_name="AMP_KYBER_ADMINS", keywords="admin,admins,moderator,mod,staff,permissions")
-setting("AdminsExclusive", "server", "Only These Admins",
+setting("AdminsExclusive", "admins", "Only These Admins",
         "Also remove admins that are not in the list above (for example ones added from the KYBER launcher).",
         itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_ADMINS_EXCLUSIVE", keywords="admin,moderator,remove")
 setting("MaxPlayers", "server", "Max Players", "Maximum number of players (1-64).",
@@ -124,10 +127,6 @@ setting("UsePlugins", "mods", "Enable Plugins Folder",
         "Uses the `plugins` folder as the KYBER plugins path. Plugins are experimental and unsupported by KYBER.",
         itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_USE_PLUGINS", keywords="plugins")
 
-setting("EAToken", "game", "EA Token (game download only)",
-        "Only needed to download or verify the game files on Update. Create one with `kyber_cli get_ea_token`; "
-        "EA tokens expire quickly, so paste a fresh one right before updating. The server itself logs in with the EA email and password.",
-        itype="Password", env_name="AMP_KYBER_EA_TOKEN", keywords="ea,token,download,verify")
 setting("GameDir", "game", "Game Directory",
         "Folder holding starwarsbattlefrontii.exe, as seen inside the shard. Leave blank for the `battlefront` folder of this server.",
         env_name="AMP_KYBER_GAME_DIR", keywords="game,path,directory,install")
@@ -135,21 +134,25 @@ setting("VerifyGame", "game", "Verify Game Files on Update",
         "Re-run the EA download on every Update to check and repair the game files. Needs a fresh EA token. "
         "When disabled, Update skips the download once starwarsbattlefrontii.exe is in the game folder.",
         itype="checkbox", default="false", enum=BOOL, keywords="verify,repair,download,game,update")
+setting("EAToken", "game", "EA Token (game download only)",
+        "Only needed to download or verify the game files on Update. Create one with `kyber_cli get_ea_token`; "
+        "EA tokens expire quickly, so paste a fresh one right before updating. The server itself logs in with the EA email and password.",
+        itype="Password", env_name="AMP_KYBER_EA_TOKEN", keywords="ea,token,download,verify")
 
-setting("ModuleChannel", "advanced", "KYBER Module Channel", "Release channel of the KYBER module the server loads.",
+setting("ModuleChannel", "module", "KYBER Module Channel", "Release channel of the KYBER module the server loads.",
         itype="enum", default="default", env_name="AMP_KYBER_MODULE_CHANNEL", keywords="module,channel,beta,version",
         enum={"default": "Default", "stable": "stable", "custom": "Custom (set below)"})
-setting("ModuleChannelCustom", "advanced", "Custom Module Channel", "Used when the channel above is Custom, e.g. `ver/beta10`.",
+setting("ModuleChannelCustom", "module", "Custom Module Channel", "Used when the channel above is Custom, e.g. `ver/beta10`.",
         env_name="AMP_KYBER_MODULE_CHANNEL_CUSTOM", keywords="module,channel,version", Placeholder="ver/beta10")
-setting("LogLevel", "advanced", "Log Level", "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose, which prints your EA password and KYBER token in the console.",
+setting("LogLevel", "logging", "Log Level", "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose, which prints your EA password and KYBER token in the console.",
         itype="enum", default="info", env_name="AMP_KYBER_LOG_LEVEL", keywords="log,debug,trace",
         enum={"info": "info", "debug": "debug", "trace": "trace"})
-setting("MaximaDebug", "advanced", "Maxima Debug Output", "Adds --debug to kyber_cli for troubleshooting EA login problems.",
+setting("MaximaDebug", "logging", "Maxima Debug Output", "Adds --debug to kyber_cli for troubleshooting EA login problems.",
         itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_MAXIMA_DEBUG", keywords="debug,maxima")
-setting("KyberImage", "advanced", "KYBER Image (runtime source)",
+setting("KyberImage", "runtime", "KYBER Image (runtime source)",
         "The KYBER files (kyber_cli, maxima, module) are taken from this image on every Update.",
         default="ghcr.io/armchairdevelopers/kyber-server:latest", keywords="image,docker,runtime,version")
-setting("WineUrl", "advanced", "Wine Build URL", "Wine build used to run the server. Default is the GE-Proton8-26 build KYBER ships.",
+setting("WineUrl", "runtime", "Wine Build URL", "Wine build used to run the server. Default is the GE-Proton8-26 build KYBER ships.",
         default="https://github.com/GloriousEggroll/wine-ge-custom/releases/download/GE-Proton8-26/wine-lutris-GE-Proton8-26-x86_64.tar.xz",
         keywords="wine,proton,ge")
 setting("$MaxUsers", "server", "Maximum Users (AMP)", "Player limit AMP uses for its own statistics.",
