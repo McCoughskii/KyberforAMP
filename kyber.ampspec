@@ -53,7 +53,7 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "10",
+    "ConfigVersion": "11",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
@@ -81,7 +81,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-install.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-install.sh?cv=10",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-install.sh?cv=11",
       "UpdateSourceArgs": "kyber-install.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -90,7 +90,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-run.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-run.sh?cv=10",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-run.sh?cv=11",
       "UpdateSourceArgs": "kyber-run.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -99,7 +99,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-api.py",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-api.py?cv=10",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-api.py?cv=11",
       "UpdateSourceArgs": "kyber-api.py",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -109,7 +109,7 @@
       "UpdateStageName": "Install KYBER runtime, Wine and game files",
       "UpdateSourcePlatform": "Linux",
       "UpdateSourceData": "/bin/bash",
-      "UpdateSourceArgs": "-c \"chmod +x '{{$FullRootDir}}scripts/'*.sh; KYBER_IMAGE='{{KyberImage}}' KYBER_WINE_URL='{{WineUrl}}' KYBER_GAME_DIR='{{GameDir}}' KYBER_EA_TOKEN='{{EAToken}}' '{{$FullRootDir}}scripts/kyber-install.sh' '{{$FullBaseDir}}'\""
+      "UpdateSourceArgs": "-c \"chmod +x '{{$FullRootDir}}scripts/'*.sh; KYBER_IMAGE='{{KyberImage}}' KYBER_WINE_URL='{{WineUrl}}' KYBER_GAME_DIR='{{GameDir}}' KYBER_EA_TOKEN='{{EAToken}}' KYBER_VERIFY_GAME='{{VerifyGame}}' '{{$FullRootDir}}scripts/kyber-install.sh' '{{$FullBaseDir}}'\""
     }
   ],
   "PortRequirements": [],
@@ -274,6 +274,21 @@
       "InputType": "text"
     },
     {
+      "FieldName": "VerifyGame",
+      "ParamFieldName": "VerifyGame",
+      "DefaultValue": "false",
+      "Category": "category.kyber:rocket_launch",
+      "Subcategory": "category.game:download:5",
+      "DisplayName": "setting.VerifyGame.name",
+      "Description": "setting.VerifyGame.desc",
+      "Keywords": "verify,repair,download,game,update",
+      "InputType": "checkbox",
+      "EnumValues": {
+        "False": "setting.VerifyGame.value.False",
+        "True": "setting.VerifyGame.value.True"
+      }
+    },
+    {
       "FieldName": "ModuleChannel",
       "ParamFieldName": "ModuleChannel",
       "DefaultValue": "default",
@@ -409,6 +424,10 @@
       "setting.UsePlugins.value.True": "Enabled",
       "setting.GameDir.name": "Game Directory",
       "setting.GameDir.desc": "Folder holding starwarsbattlefrontii.exe, as seen inside the shard. Leave blank for the `battlefront` folder of this server.",
+      "setting.VerifyGame.name": "Verify Game Files on Update",
+      "setting.VerifyGame.desc": "Re-run the EA download on every Update to check and repair the game files. Needs a fresh EA token. When disabled, Update skips the download once starwarsbattlefrontii.exe is in the game folder.",
+      "setting.VerifyGame.value.False": "Disabled",
+      "setting.VerifyGame.value.True": "Enabled",
       "setting.ModuleChannel.name": "KYBER Module Channel",
       "setting.ModuleChannel.desc": "Release channel of the KYBER module the server loads.",
       "setting.ModuleChannel.value.default": "Default",

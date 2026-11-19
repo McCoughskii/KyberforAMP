@@ -8,13 +8,15 @@
 # GE-Proton Wine build the image uses, and optionally downloads the game.
 #
 # Usage: kyber-install.sh <FullBaseDir>
-# Env:   KYBER_IMAGE, KYBER_WINE_URL, KYBER_GAME_DIR, KYBER_EA_TOKEN, KYBER_FORCE_RUNTIME
+# Env:   KYBER_IMAGE, KYBER_WINE_URL, KYBER_GAME_DIR, KYBER_EA_TOKEN, KYBER_VERIFY_GAME, KYBER_FORCE_RUNTIME
 
 set -uo pipefail
 BASE="${1:?base dir missing}"; BASE="${BASE%/}"
 log()  { echo "[KYBER] $*"; }
 fail() { echo "[KYBER] ERROR: $*"; exit 1; }
 trim() { local s="$1"; s="${s#"${s%%[![:space:]]*}"}"; s="${s%"${s##*[![:space:]]}"}"; printf '%s' "$s"; }
+# AMP checkboxes arrive as "True", "setting.X.value.True" or similar, not "true".
+is_true() { case "$(trim "${1:-}" | tr '[:upper:]' '[:lower:]')" in true|1|yes|on|enabled|*.true) return 0 ;; *) return 1 ;; esac; }
 
 IMAGE="$(trim "${KYBER_IMAGE:-}")";        [ -z "$IMAGE" ] && IMAGE="ghcr.io/armchairdevelopers/kyber-server:latest"
 WINE_URL="$(trim "${KYBER_WINE_URL:-}")";  [ -z "$WINE_URL" ] && WINE_URL="https://github.com/GloriousEggroll/wine-ge-custom/releases/download/GE-Proton8-26/wine-lutris-GE-Proton8-26-x86_64.tar.xz"
@@ -105,7 +107,12 @@ else
 fi
 
 # ---------------------------------------------------------------- Game files
-if [ -n "$EA_TOKEN" ]; then
+# Once the game is installed, Update leaves it alone (no EA login, so an expired
+# EA token does not break updates). Set KYBER_VERIFY_GAME to re-check the files.
+GAME_EXE="$(find "$GAME_DIR" -maxdepth 1 -iname 'starwarsbattlefrontii.exe' 2>/dev/null | head -n1)"
+if [ -n "$GAME_EXE" ] && ! is_true "${KYBER_VERIFY_GAME:-}"; then
+  log "Game files found in $GAME_DIR; skipping the game download (enable 'Verify Game Files on Update' to re-check them)."
+elif [ -n "$EA_TOKEN" ]; then
   log "Downloading / verifying Star Wars Battlefront II into $GAME_DIR (about 90 GB on first install) ..."
   # kyber_cli download_game does not exit on its own once it reaches 100%, and it
   # redraws a progress spinner every 0.2s. Run it in the background, show every
@@ -153,11 +160,13 @@ if [ -n "$EA_TOKEN" ]; then
   wait "$show_pid" 2>/dev/null
   trap - TERM INT HUP
   [ "$done_at" != 0 ] && dl_rc=0
-  [ "$dl_rc" -eq 0 ] \
-    || fail "game download failed. EA tokens expire quickly - create a fresh one with 'kyber_cli get_ea_token' and update again."
-  log "Game download finished."
-elif ls "$GAME_DIR" 2>/dev/null | grep -qi '^starwarsbattlefrontii\.exe$'; then
-  log "Game files found in $GAME_DIR."
+  if [ "$dl_rc" -eq 0 ]; then
+    log "Game download finished."
+  elif [ -n "$GAME_EXE" ]; then
+    log "WARNING: game verification failed (the EA token has probably expired). The existing game files are kept; create a fresh token with 'kyber_cli get_ea_token' to verify again."
+  else
+    fail "game download failed. EA tokens expire quickly - create a fresh one with 'kyber_cli get_ea_token' and update again."
+  fi
 else
   log "WARNING: no game files in $GAME_DIR. Set 'EA Token (game download)' and update again, or upload the game files there."
 fi

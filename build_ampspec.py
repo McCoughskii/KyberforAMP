@@ -11,7 +11,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "10"
+CONFIG_VERSION = "11"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -119,6 +119,10 @@ setting("UsePlugins", "mods", "Enable Plugins Folder",
 setting("GameDir", "game", "Game Directory",
         "Folder holding starwarsbattlefrontii.exe, as seen inside the shard. Leave blank for the `battlefront` folder of this server.",
         env_name="AMP_KYBER_GAME_DIR", keywords="game,path,directory,install")
+setting("VerifyGame", "game", "Verify Game Files on Update",
+        "Re-run the EA download on every Update to check and repair the game files. Needs a fresh EA token. "
+        "When disabled, Update skips the download once starwarsbattlefrontii.exe is in the game folder.",
+        itype="checkbox", default="false", enum=BOOL, keywords="verify,repair,download,game,update")
 
 setting("ModuleChannel", "advanced", "KYBER Module Channel", "Release channel of the KYBER module the server loads.",
         itype="enum", default="default", env_name="AMP_KYBER_MODULE_CHANNEL", keywords="module,channel,beta,version",
@@ -155,7 +159,7 @@ def fetch(name):
 
 install_cmd = (
     "-c \"chmod +x '{{$FullRootDir}}scripts/'*.sh; "
-    "KYBER_IMAGE='{{KyberImage}}' KYBER_WINE_URL='{{WineUrl}}' KYBER_GAME_DIR='{{GameDir}}' KYBER_EA_TOKEN='{{EAToken}}' "
+    "KYBER_IMAGE='{{KyberImage}}' KYBER_WINE_URL='{{WineUrl}}' KYBER_GAME_DIR='{{GameDir}}' KYBER_EA_TOKEN='{{EAToken}}' KYBER_VERIFY_GAME='{{VerifyGame}}' "
     "'{{$FullRootDir}}scripts/kyber-install.sh' '{{$FullBaseDir}}'\""
 )
 
