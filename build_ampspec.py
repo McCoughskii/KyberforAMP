@@ -11,7 +11,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "17"
+CONFIG_VERSION = "20"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
