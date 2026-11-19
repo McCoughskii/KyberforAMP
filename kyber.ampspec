@@ -13,7 +13,7 @@
     "CommandLineParameterDelimiter": "",
     "ApplicationReadyMode": "RegexMatch",
     "ExitMethod": "OS_CLOSE",
-    "ExitTimeout": "30",
+    "ExitTimeout": "60",
     "ExitString": "",
     "ExitFile": ""
   },
@@ -53,15 +53,15 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "6",
+    "ConfigVersion": "7",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
-    "ThrowawayMessageRegex": "^(?:[0-9a-f]{4}:(?:fixme|warn|trace):.*|[0-9a-f]{4}:err:(?:winediag|winstation|explorer|systray|ole|wineboot|setupapi|console|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*|wine: (?:configuration in .* has been updated|created the configuration directory).*|.*The explorer process failed to start.*|Could not find Wine Gecko.*|Could not find Wine Mono.*|reg: The operation completed successfully.*)$",
+    "ThrowawayMessageRegex": "^(?:[0-9a-f]{4}:(?:fixme|warn|trace):.*|[0-9a-f]{4}:err:(?:winediag|winstation|explorer|systray|ole|wineboot|setupapi|console|combase|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*|wine: (?:configuration in .* has been updated|created the configuration directory).*|.*The explorer process failed to start.*|Could not find Wine Gecko.*|Could not find Wine Mono.*|reg: The operation completed successfully.*)$",
     "AppReadyRegex": "^.*\\[KYBER\\] \\[info\\] \\[Server\\] Server level loaded.*$",
-    "UserJoinRegex": "^$",
-    "UserLeaveRegex": "^$",
-    "UserChatRegex": "^$",
+    "UserJoinRegex": "^.*\\[KYBER\\] \\[info\\] \\[Server\\] (?<username>.+?) \\((?<userid>\\d+)\\) has authenticated and joined the server$",
+    "UserLeaveRegex": "^.*\\[KYBER\\] \\[info\\] \\[Server\\] (?<username>.+?) \\((?<userid>\\d+)\\) left the server$",
+    "UserChatRegex": "^.*\\[KYBER\\] \\[info\\] \\[Server\\] (?!ADMIN:)(?<username>[^ :()]+): (?<message>.+)$",
     "UpdateAvailableRegex": "^$"
   },
   "PortReferences": {

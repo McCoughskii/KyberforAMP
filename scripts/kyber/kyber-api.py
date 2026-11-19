@@ -24,6 +24,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import zlib
 import time
 
 HOST = os.environ.get("KYBER_API_HOST", "api.prod.kyber.gg")
@@ -111,22 +112,39 @@ def call(method, payload=b"", auth=None):
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.returncode != 0:
             raise ApiError("connection to %s failed: %s" % (HOST, proc.stderr.strip()))
-        headers = open(hdrs, encoding="latin-1").read().lower()
+        headers = open(hdrs, encoding="latin-1").read()
         body = open(body_out, "rb").read()
-    status, message = None, ""
+    name = method.split("/")[-1]
+    http_status, ctype, status, message = "", "", None, ""
     for line in headers.splitlines():
-        if line.startswith("grpc-status:"):
+        low = line.lower()
+        if low.startswith("http/"):
+            parts = line.split()
+            http_status = parts[1] if len(parts) > 1 else ""
+        elif low.startswith("content-type:"):
+            ctype = low.split(":", 1)[1].strip()
+        elif low.startswith("grpc-status:"):
             status = line.split(":", 1)[1].strip()
-        elif line.startswith("grpc-message:"):
+        elif low.startswith("grpc-message:"):
             message = line.split(":", 1)[1].strip()
-    if len(body) >= 5:
-        ln = struct.unpack(">I", body[1:5])[0]
-        data = body[5:5 + ln]
-    else:
-        data = b""
+    if os.environ.get("KYBER_API_DEBUG"):
+        sys.stderr.write("[kyber-api] %s -> HTTP %s, %s, grpc-status %s, %d body bytes, head %r\n"
+                         % (name, http_status, ctype, status, len(body), body[:48]))
+    if http_status != "200" or not ctype.startswith("application/grpc"):
+        snippet = body[:160].decode("utf-8", "replace").strip().replace("\n", " ")
+        raise ApiError("%s: unexpected reply (HTTP %s, %s) %s" % (name, http_status or "?", ctype or "no content-type", snippet))
     if status not in (None, "0"):
-        raise ApiError("%s failed (grpc-status %s) %s" % (method.split("/")[-1], status, message))
-    return pb_decode(data)
+        raise ApiError("%s failed (grpc-status %s) %s" % (name, status, message))
+    if len(body) < 5:
+        return {}
+    flag, ln = body[0], struct.unpack(">I", body[1:5])[0]
+    data = body[5:5 + ln]
+    if flag & 1:  # compressed message (gzip)
+        data = zlib.decompress(data, 47)
+    try:
+        return pb_decode(data)
+    except (ApiError, IndexError) as e:
+        raise ApiError("%s: could not decode reply (%s) %r" % (name, e, body[:32]))
 
 
 # ---------------------------------------------------------------- state / auth
@@ -211,6 +229,15 @@ def main(argv):
     if not argv:
         print(__doc__.strip())
         return 2
+    if argv[0] == "probe":
+        # Unauthenticated call that shows what the API endpoint answers with.
+        os.environ["KYBER_API_DEBUG"] = "1"
+        try:
+            call("kyber_api.Authentication/Verify")
+            print("probe: Verify answered without error")
+        except ApiError as e:
+            print("probe: %s" % e)
+        return 0
     state = load_state()
     try:
         auth, uid, uname = session(state)

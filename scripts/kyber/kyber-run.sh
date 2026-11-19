@@ -157,8 +157,13 @@ stop_server() {
   [ "$stopping" = 1 ] && return; stopping=1
   log "Stopping KYBER server ..."
   kill -INT "$kpid" 2>/dev/null
-  for _ in $(seq 1 20); do kill -0 "$kpid" 2>/dev/null || return; sleep 1; done
-  kill -TERM "$kpid" 2>/dev/null; sleep 5; kill -KILL "$kpid" 2>/dev/null
+  for _ in $(seq 1 10); do kill -0 "$kpid" 2>/dev/null || return; sleep 1; done
+  # kyber_cli waits for the game; end the game (every Wine process in this prefix).
+  log "Closing the game ..."
+  "$BASE/wine/bin/wineserver" -k >/dev/null 2>&1
+  for _ in $(seq 1 15); do kill -0 "$kpid" 2>/dev/null || return; sleep 1; done
+  kill -TERM "$kpid" 2>/dev/null; sleep 3; kill -KILL "$kpid" 2>/dev/null
+  "$BASE/wine/bin/wineserver" -k9 >/dev/null 2>&1
 }
 trap stop_server INT TERM HUP
 

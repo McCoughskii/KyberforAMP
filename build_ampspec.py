@@ -11,7 +11,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "6"
+CONFIG_VERSION = "7"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -35,7 +35,7 @@ settings = []
 
 WINE_NOISE = (
     r"^(?:[0-9a-f]{4}:(?:fixme|warn|trace):.*"
-    r"|[0-9a-f]{4}:err:(?:winediag|winstation|explorer|systray|ole|wineboot|setupapi|console|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*"
+    r"|[0-9a-f]{4}:err:(?:winediag|winstation|explorer|systray|ole|wineboot|setupapi|console|combase|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*"
     r"|wine: (?:configuration in .* has been updated|created the configuration directory).*"
     r"|.*The explorer process failed to start.*"
     r"|Could not find Wine Gecko.*|Could not find Wine Mono.*"
@@ -171,7 +171,7 @@ spec = {
         "CommandLineParameterDelimiter": "",
         "ApplicationReadyMode": "RegexMatch",
         "ExitMethod": "OS_CLOSE",
-        "ExitTimeout": "30",
+        "ExitTimeout": "60",
         "ExitString": "",
         "ExitFile": "",
     },
@@ -203,9 +203,9 @@ spec = {
         "ThrowawayMessageRegex": WINE_NOISE,
         # Printed by the KYBER module once the first map of the rotation is up.
         "AppReadyRegex": r"^.*\[KYBER\] \[info\] \[Server\] Server level loaded.*$",
-        "UserJoinRegex": "^$",
-        "UserLeaveRegex": "^$",
-        "UserChatRegex": "^$",
+        "UserJoinRegex": r"^.*\[KYBER\] \[info\] \[Server\] (?<username>.+?) \((?<userid>\d+)\) has authenticated and joined the server$",
+        "UserLeaveRegex": r"^.*\[KYBER\] \[info\] \[Server\] (?<username>.+?) \((?<userid>\d+)\) left the server$",
+        "UserChatRegex": r"^.*\[KYBER\] \[info\] \[Server\] (?!ADMIN:)(?<username>[^ :()]+): (?<message>.+)$",
         "UpdateAvailableRegex": "^$",
     },
     "PortReferences": {
