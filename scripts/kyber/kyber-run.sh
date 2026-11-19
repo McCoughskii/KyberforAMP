@@ -89,12 +89,58 @@ CHANNEL="$(trim "${AMP_KYBER_MODULE_CHANNEL:-default}")"
 if [ -n "$CHANNEL" ] && [ "$CHANNEL" != "default" ]; then export KYBER_MODULE_CHANNEL="$CHANNEL"; else unset KYBER_MODULE_CHANNEL; fi
 export KYBER_LOG_LEVEL="$(trim "${AMP_KYBER_LOG_LEVEL:-info}")"
 
+# Builds a KYBER .kbcollection (a zip holding METADATA, the format of
+# Packages/kyber_collection/lib/src/mod_collection.dart) that lists one Frosty
+# .fbcollection and its mods. Usage: make_kbcollection <file.fbcollection>
+make_kbcollection() {
+  python3 - "$1" <<'PY'
+import io, json, os, struct, sys, uuid, zipfile
+src = sys.argv[1]
+with open(src, "rb") as f:
+    magic, _ver, off, size = struct.unpack("<4I", f.read(16))
+    if magic != 0x46434F4C:
+        sys.exit("not a Frosty collection file")
+    f.seek(off)
+    man = json.loads(f.read(size).decode("utf-8"))
+folder = os.path.dirname(os.path.abspath(src))
+mods = [m.replace("\\", "/") for m in man.get("mods", [])]
+missing = [m for m in mods if not os.path.isfile(os.path.join(folder, os.path.basename(m)))]
+if missing:
+    sys.exit("missing mod files: " + ", ".join(missing))
+title = (man.get("title") or os.path.splitext(os.path.basename(src))[0])[:255]
+def term(s): return s.encode("latin-1", "replace") + b"\0"
+def sized(s):
+    b = s.encode("latin-1", "replace")[:255]
+    return bytes([len(b)]) + b
+meta = io.BytesIO()
+meta.write(struct.pack("<I", 1))                      # collection version
+meta.write(term(uuid.uuid4().hex))                    # localId
+meta.write(sized(title)); meta.write(sized(""))       # title, description
+meta.write(struct.pack("<I", 0))                      # isCosmetic
+meta.write(struct.pack("<I", 1))                      # one entry: the Frosty collection
+for v in (title, man.get("version") or "", man.get("link") or "",
+          os.path.basename(src), "true", ",".join(os.path.basename(m) for m in mods)):
+    meta.write(term(v))
+out = os.path.join(folder, os.path.splitext(os.path.basename(src))[0] + ".kbcollection")
+with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+    z.writestr("METADATA", meta.getvalue())
+print("%s|%d" % (os.path.basename(out), len(mods)))
+PY
+}
+
 unset KYBER_MOD_FOLDER KYBER_SERVER_PLUGINS_PATH
 if is_true "${AMP_KYBER_USE_MODS:-}"; then
   # kyber_cli loads the collection straight from KYBER_MOD_FOLDER: put the
-  # collection file and all of its mods directly in mods-previous/.
+  # collection file and all of its mods directly in mods-previous/. It needs a
+  # .kbcollection there; if there is only a Frosty .fbcollection, one is made
+  # from it once (replace it with the launcher's own any time).
   export KYBER_MOD_FOLDER="$BASE/mods-previous"
   mkdir -p "$KYBER_MOD_FOLDER"
+  shopt -s nullglob; kb=("$KYBER_MOD_FOLDER"/*.kbcollection); fb=("$KYBER_MOD_FOLDER"/*.fbcollection); shopt -u nullglob
+  if [ "${#kb[@]}" -eq 0 ] && [ "${#fb[@]}" -eq 1 ]; then
+    made="$(make_kbcollection "${fb[0]}")" || fail "could not build a .kbcollection from $(basename "${fb[0]}")."
+    log "Created ${made%|*} (${made##*|} mods) from $(basename "${fb[0]}")"
+  fi
   log "Mod folder: $KYBER_MOD_FOLDER"
 else
   log "Mod collection disabled (Load Mod Collection = '${AMP_KYBER_USE_MODS:-}')."
