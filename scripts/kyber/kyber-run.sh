@@ -44,6 +44,10 @@ TOKEN="$(trim "${AMP_KYBER_TOKEN:-}")"
 # filter ignores AMP's stop signals so it can still pass on the shutdown
 # messages; it ends at EOF. It also swallows the built-in plugin's heartbeat
 # lines, touching $HEARTBEAT instead so the crash watchdog can spot a frozen game.
+# It also remembers who is connected and, when the server ends (a crash
+# included), prints a "left" line for each of them. Without those lines AMP's
+# agent keeps that run's players and shows them as connected next to the next
+# run's real list, so the Connected Users count flips between the two.
 WATCH_DIR="$BASE/.watchdog"
 HEARTBEAT="$WATCH_DIR/heartbeat"
 rm -rf "$WATCH_DIR"; mkdir -p "$WATCH_DIR"
@@ -51,11 +55,20 @@ exec > >(
   trap '' INT TERM HUP
   secrets=()
   for s in "$EA_PASS" "$TOKEN" "$EA_TOKEN" "$EA_USER"; do [ "${#s}" -ge 4 ] && secrets+=("$s"); done
+  declare -A online=()   # player id -> name, from the built-in plugin's join/leave lines
+  user_re='\[KYBER\] \[info\] \[AMP\] (.+) \(([0-9]+)\) (joined|left) the server$'
   while IFS= read -r line || [ -n "$line" ]; do
     line="${line%$'\r'}"   # the game's output ends lines with CRLF; AMP's regexes expect none
     if [[ "$line" == *"[KYBER] [info] [AMP] heartbeat" ]]; then : > "$HEARTBEAT"; continue; fi
+    if [[ "$line" =~ $user_re ]]; then
+      if [ "${BASH_REMATCH[3]}" = joined ]; then online["${BASH_REMATCH[2]}"]="${BASH_REMATCH[1]}"
+      else unset 'online[${BASH_REMATCH[2]}]'; fi
+    fi
     for s in "${secrets[@]}"; do line="${line//"$s"/****}"; done
     printf '%s\n' "$line"
+  done
+  for id in "${!online[@]}"; do
+    printf '[KYBER] [info] [AMP] %s (%s) left the server\n' "${online[$id]}" "$id"
   done
 ) 2>&1
 CENSOR_PID=$!
