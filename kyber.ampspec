@@ -55,7 +55,7 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "17",
+    "ConfigVersion": "18",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
@@ -83,7 +83,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-install.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-install.sh?cv=17",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-install.sh?cv=18",
       "UpdateSourceArgs": "kyber-install.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -92,7 +92,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-run.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-run.sh?cv=17",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-run.sh?cv=18",
       "UpdateSourceArgs": "kyber-run.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -101,7 +101,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-api.py",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-api.py?cv=17",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/dev/scripts/kyber/kyber-api.py?cv=18",
       "UpdateSourceArgs": "kyber-api.py",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -121,13 +121,8 @@
     "wine.new/",
     "runtime/",
     "runtime.new/",
-    "cli/",
-    "logs/",
     ".kyber-tmp/",
-    ".kyber-api/",
-    "mod-archives/",
-    "mods-previous/",
-    "mods-unpacked/"
+    ".kyber-api/"
   ],
   "Settings": [
     {
@@ -442,7 +437,7 @@
       "setting.MapRotation.name": "Map Rotation",
       "setting.MapRotation.desc": "One entry per map as `mode;map`. Paste the base64 string from the KYBER launcher (Host > NEW > add maps > Export), or type `mode;map` lines such as `PlanetaryBattles;S5_1/Levels/MP/Geonosis_01/Geonosis_01`. The launcher's JSON export also works.",
       "setting.UseMods.name": "Load Mod Collection",
-      "setting.UseMods.desc": "Loads a KYBER mod collection (for example Battlefront Plus) from the `mods-previous` folder. Upload the collection file and all of its mods directly into `mods-previous` with the File Manager and restart. Players need the same collection to join.",
+      "setting.UseMods.desc": "Loads a KYBER mod collection (for example Battlefront Plus) from the `mods` folder. Upload the collection file (.kbcollection, or the .fbcollection from the launcher's mods folder) and all of its mods directly into `mods` with the File Manager and restart. Players need the same collection to join.",
       "setting.UseMods.value.False": "Disabled",
       "setting.UseMods.value.True": "Enabled",
       "setting.UsePlugins.name": "Enable Plugins Folder",

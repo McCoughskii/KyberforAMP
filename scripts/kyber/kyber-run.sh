@@ -83,7 +83,7 @@ export KYBER_MAP_ROTATION="$(printf '%s' "$LINES" | base64 -w0)"
 log "Map rotation: $count entries"
 while IFS= read -r line; do [ -n "$line" ] && [ "${line:0:1}" != "#" ] && log "  $line"; done <<< "$LINES"
 
-# ---------- optional ----------
+# ---------- mods, plugins and module options ----------
 CHANNEL="$(trim "${AMP_KYBER_MODULE_CHANNEL:-default}")"
 [ "$CHANNEL" = "custom" ] && CHANNEL="$(trim "${AMP_KYBER_MODULE_CHANNEL_CUSTOM:-}")"
 if [ -n "$CHANNEL" ] && [ "$CHANNEL" != "default" ]; then export KYBER_MODULE_CHANNEL="$CHANNEL"; else unset KYBER_MODULE_CHANNEL; fi
@@ -131,10 +131,10 @@ PY
 unset KYBER_MOD_FOLDER KYBER_SERVER_PLUGINS_PATH
 if is_true "${AMP_KYBER_USE_MODS:-}"; then
   # kyber_cli loads the collection straight from KYBER_MOD_FOLDER: put the
-  # collection file and all of its mods directly in mods-previous/. It needs a
+  # collection file and all of its mods directly in mods/. It needs a
   # .kbcollection there; if there is only a Frosty .fbcollection, one is made
   # from it once (replace it with the launcher's own any time).
-  export KYBER_MOD_FOLDER="$BASE/mods-previous"
+  export KYBER_MOD_FOLDER="$BASE/mods"
   mkdir -p "$KYBER_MOD_FOLDER"
   shopt -s nullglob; kb=("$KYBER_MOD_FOLDER"/*.kbcollection); fb=("$KYBER_MOD_FOLDER"/*.fbcollection); shopt -u nullglob
   if [ "${#kb[@]}" -eq 0 ] && [ "${#fb[@]}" -eq 1 ]; then
@@ -167,10 +167,10 @@ if [ ! -f "$WINEPREFIX/system.reg" ]; then
   "$WINE" wineboot --init >/dev/null 2>&1 || warn "wineboot reported an error; continuing"
 fi
 
-# With an EA token session kyber_cli launches the game in "Online" mode, where
-# maxima only treats the game as installed if the registry entry the game's own
-# installer (touchup) would write is present. That installer cannot run headless,
-# so register the install ourselves (same key as __Installer/installerdata.xml).
+# Maxima launches the game in "Online" mode, where it only treats the game as
+# installed if the registry entry the game's own installer (touchup) would write
+# is present. That installer cannot run headless, so register the install
+# ourselves (same key as __Installer/installerdata.xml).
 WIN_GAME_DIR="Z:$(printf '%s' "${GAME_DIR%/}" | tr '/' '\\')\\"
 for view in 64 32; do
   "$WINE" reg add 'HKLM\Software\EA Games\STAR WARS Battlefront II' /v 'Install Dir' /d "$WIN_GAME_DIR" /f "/reg:$view" >/dev/null 2>&1 \

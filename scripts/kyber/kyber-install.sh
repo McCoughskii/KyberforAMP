@@ -13,6 +13,7 @@
 set -uo pipefail
 BASE="${1:?base dir missing}"; BASE="${BASE%/}"
 log()  { echo "[KYBER] $*"; }
+warn() { echo "[KYBER] WARNING: $*"; }
 fail() { echo "[KYBER] ERROR: $*"; exit 1; }
 trim() { local s="$1"; s="${s#"${s%%[![:space:]]*}"}"; s="${s%"${s##*[![:space:]]}"}"; printf '%s' "$s"; }
 # AMP checkboxes arrive as "True", "setting.X.value.True" or similar, not "true".
@@ -163,12 +164,12 @@ elif [ -n "$EA_TOKEN" ]; then
   if [ "$dl_rc" -eq 0 ]; then
     log "Game download finished."
   elif [ -n "$GAME_EXE" ]; then
-    log "WARNING: game verification failed (the EA token has probably expired). The existing game files are kept; create a fresh token with 'kyber_cli get_ea_token' to verify again."
+    warn "game verification failed (the EA token has probably expired). The existing game files are kept; create a fresh token with 'kyber_cli get_ea_token' to verify again."
   else
     fail "game download failed. EA tokens expire quickly - create a fresh one with 'kyber_cli get_ea_token' and update again."
   fi
 else
-  log "WARNING: no game files in $GAME_DIR. Set 'EA Token (game download)' and update again, or upload the game files there."
+  warn "no game files in $GAME_DIR. Set 'EA Token (game download only)' and update again, or upload the game files there."
 fi
 
 log "Install/update complete."

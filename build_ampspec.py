@@ -1,17 +1,23 @@
 """Generates kyber.ampspec (AMP3 template) next to this file.
 
-Run:  python build_ampspec.py
+Run:  python3 build_ampspec.py   (after any change here, and commit both files)
 The repo layout this expects (and AMP3 reads):
     kyber.ampspec
     scripts/kyber/kyber-install.sh
     scripts/kyber/kyber-run.sh
+    scripts/kyber/kyber-api.py
+
+Bump CONFIG_VERSION with every change: it is the template version AMP shows
+and the ?cv= on the script URLs. BRANCH is the branch AMP downloads the
+scripts from; keep it matching the branch this file is committed to.
 """
 import json
 import pathlib
 
 HERE = pathlib.Path(__file__).parent
-REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "17"
+BRANCH = "dev"
+REPO_RAW = f"https://raw.githubusercontent.com/McCoughskii/KyberforAMP/{BRANCH}"
+CONFIG_VERSION = "18"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -109,8 +115,9 @@ setting("MapRotation", "rotation", "Map Rotation",
         keywords="map,rotation,mode,level")
 
 setting("UseMods", "mods", "Load Mod Collection",
-        "Loads a KYBER mod collection (for example Battlefront Plus) from the `mods-previous` folder. "
-        "Upload the collection file and all of its mods directly into `mods-previous` with the File Manager and restart. "
+        "Loads a KYBER mod collection (for example Battlefront Plus) from the `mods` folder. "
+        "Upload the collection file (.kbcollection, or the .fbcollection from the launcher's mods folder) and all of its "
+        "mods directly into `mods` with the File Manager and restart. "
         "Players need the same collection to join.",
         itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_USE_MODS", keywords="mods,collection,battlefront plus,modpack")
 setting("UsePlugins", "mods", "Enable Plugins Folder",
@@ -154,7 +161,8 @@ def fetch(name):
         "UpdateSource": "FetchURL",
         "UpdateStageName": f"Download {name}",
         "UpdateSourcePlatform": "Linux",
-        # ?cv= changes with every template version so GitHub's raw cache never serves an old script.
+        # ?cv= changes with every template version. GitHub's raw cache can still
+        # serve the previous file for ~5 minutes after a push.
         "UpdateSourceData": f"{REPO_RAW}/scripts/kyber/{name}?cv={CONFIG_VERSION}",
         "UpdateSourceArgs": name,
         "UpdateSourceTarget": "{{$FullRootDir}}scripts",
@@ -252,13 +260,8 @@ spec = {
         "wine.new/",
         "runtime/",
         "runtime.new/",
-        "cli/",
-        "logs/",
         ".kyber-tmp/",
         ".kyber-api/",
-        "mod-archives/",
-        "mods-previous/",
-        "mods-unpacked/",
     ],
     "Settings": settings,
     "ConfigFileMappings": [],
@@ -266,5 +269,6 @@ spec = {
 }
 
 out = HERE / "kyber.ampspec"
-out.write_text(json.dumps(spec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+with open(out, "w", encoding="utf-8", newline="\n") as f:   # newline= needs open(), not Path.write_text, on Python < 3.10
+    f.write(json.dumps(spec, indent=2, ensure_ascii=False) + "\n")
 print("Wrote", out, "-", len(settings), "settings,", len(env), "env vars")
