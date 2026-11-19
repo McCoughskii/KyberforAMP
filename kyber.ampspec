@@ -24,8 +24,7 @@
     "AdminMethod": "STDIO",
     "RCONHeartbeatCommand": "",
     "EnvironmentVariables": {
-      "AMP_KYBER_EA_EMAIL": "{{EAEmail}}",
-      "AMP_KYBER_EA_PASSWORD": "{{EAPassword}}",
+      "AMP_KYBER_EA_TOKEN": "{{EAToken}}",
       "AMP_KYBER_TOKEN": "{{KyberToken}}",
       "AMP_KYBER_SERVER_NAME": "{{ServerName}}",
       "AMP_KYBER_SERVER_DESCRIPTION": "{{ServerDescription}}",
@@ -52,7 +51,7 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "1",
+    "ConfigVersion": "2",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
@@ -104,26 +103,14 @@
   "PortRequirements": [],
   "Settings": [
     {
-      "FieldName": "EAEmail",
-      "ParamFieldName": "EAEmail",
+      "FieldName": "EAToken",
+      "ParamFieldName": "EAToken",
       "DefaultValue": "",
       "Category": "category.kyber:rocket_launch",
       "Subcategory": "category.accounts:key:1",
-      "DisplayName": "setting.EAEmail.name",
-      "Description": "setting.EAEmail.desc",
-      "Keywords": "ea,email,maxima,login,account",
-      "InputType": "text",
-      "Placeholder": "you@example.com"
-    },
-    {
-      "FieldName": "EAPassword",
-      "ParamFieldName": "EAPassword",
-      "DefaultValue": "",
-      "Category": "category.kyber:rocket_launch",
-      "Subcategory": "category.accounts:key:1",
-      "DisplayName": "setting.EAPassword.name",
-      "Description": "setting.EAPassword.desc",
-      "Keywords": "ea,password,maxima",
+      "DisplayName": "setting.EAToken.name",
+      "Description": "setting.EAToken.desc",
+      "Keywords": "ea,token,login,maxima,download",
       "InputType": "Password"
     },
     {
@@ -223,17 +210,6 @@
         "False": "setting.UsePlugins.value.False",
         "True": "setting.UsePlugins.value.True"
       }
-    },
-    {
-      "FieldName": "EAToken",
-      "ParamFieldName": "EAToken",
-      "DefaultValue": "",
-      "Category": "category.kyber:rocket_launch",
-      "Subcategory": "category.game:download:5",
-      "DisplayName": "setting.EAToken.name",
-      "Description": "setting.EAToken.desc",
-      "Keywords": "ea,token,download,install",
-      "InputType": "Password"
     },
     {
       "FieldName": "GameDir",
@@ -352,10 +328,8 @@
       "category.mods": "Mods & Plugins",
       "category.game": "Game Files",
       "category.advanced": "Advanced",
-      "setting.EAEmail.name": "EA Account Email",
-      "setting.EAEmail.desc": "Email of an EA account that owns Star Wars Battlefront II. Maxima uses it to validate the game licence.",
-      "setting.EAPassword.name": "EA Account Password",
-      "setting.EAPassword.desc": "Password for the EA account above.",
+      "setting.EAToken.name": "EA Token",
+      "setting.EAToken.desc": "EA auth token for the account that owns Star Wars Battlefront II. Used to log in to EA and to download the game. Create one with `kyber_cli get_ea_token`. EA tokens expire: when the server stops logging in, paste a fresh one.",
       "setting.KyberToken.name": "KYBER Token",
       "setting.KyberToken.desc": "Your KYBER API token. Create it once with `kyber_cli get_token` (KYBER launcher or CLI on any PC). It does not expire.",
       "setting.ServerName.name": "Server Name",
@@ -376,8 +350,6 @@
       "setting.UsePlugins.desc": "Uses the `plugins` folder as the KYBER plugins path. Plugins are experimental and unsupported by KYBER.",
       "setting.UsePlugins.value.False": "Disabled",
       "setting.UsePlugins.value.True": "Enabled",
-      "setting.EAToken.name": "EA Token (game download)",
-      "setting.EAToken.desc": "Needed only to download or verify the game (about 90 GB). Create one with `kyber_cli get_ea_token`, paste it here and press Update. EA tokens expire quickly; clear it after the download.",
       "setting.GameDir.name": "Game Directory",
       "setting.GameDir.desc": "Folder holding starwarsbattlefrontii.exe, as seen inside the shard. Leave blank for the `battlefront` folder of this server.",
       "setting.ModuleChannel.name": "KYBER Module Channel",

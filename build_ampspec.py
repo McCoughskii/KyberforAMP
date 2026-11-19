@@ -11,7 +11,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "1"
+CONFIG_VERSION = "2"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -63,11 +63,10 @@ def setting(field, sub, name, desc, itype="text", default="", env_name=None, enu
 
 BOOL = {"False": "Disabled", "True": "Enabled"}
 
-setting("EAEmail", "accounts", "EA Account Email",
-        "Email of an EA account that owns Star Wars Battlefront II. Maxima uses it to validate the game licence.",
-        env_name="AMP_KYBER_EA_EMAIL", keywords="ea,email,maxima,login,account", Placeholder="you@example.com")
-setting("EAPassword", "accounts", "EA Account Password", "Password for the EA account above.",
-        itype="Password", env_name="AMP_KYBER_EA_PASSWORD", keywords="ea,password,maxima")
+setting("EAToken", "accounts", "EA Token",
+        "EA auth token for the account that owns Star Wars Battlefront II. Used to log in to EA and to download the game. "
+        "Create one with `kyber_cli get_ea_token`. EA tokens expire: when the server stops logging in, paste a fresh one.",
+        itype="Password", env_name="AMP_KYBER_EA_TOKEN", keywords="ea,token,login,maxima,download")
 setting("KyberToken", "accounts", "KYBER Token",
         "Your KYBER API token. Create it once with `kyber_cli get_token` (KYBER launcher or CLI on any PC). It does not expire.",
         itype="Password", env_name="AMP_KYBER_TOKEN", keywords="kyber,token,api,auth")
@@ -97,10 +96,6 @@ setting("UsePlugins", "mods", "Enable Plugins Folder",
         "Uses the `plugins` folder as the KYBER plugins path. Plugins are experimental and unsupported by KYBER.",
         itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_USE_PLUGINS", keywords="plugins")
 
-setting("EAToken", "game", "EA Token (game download)",
-        "Needed only to download or verify the game (about 90 GB). Create one with `kyber_cli get_ea_token`, paste it here "
-        "and press Update. EA tokens expire quickly; clear it after the download.",
-        itype="Password", keywords="ea,token,download,install")
 setting("GameDir", "game", "Game Directory",
         "Folder holding starwarsbattlefrontii.exe, as seen inside the shard. Leave blank for the `battlefront` folder of this server.",
         env_name="AMP_KYBER_GAME_DIR", keywords="game,path,directory,install")

@@ -23,9 +23,8 @@ GAME_EXE="$(find "$GAME_DIR" -maxdepth 1 -iname 'starwarsbattlefrontii.exe' 2>/d
 [ -n "$GAME_EXE" ] || fail "starwarsbattlefrontii.exe not found in $GAME_DIR. Set 'EA Token (game download)' and run Update, or upload the game there."
 
 # ---------- accounts ----------
-EA_EMAIL="$(trim "${AMP_KYBER_EA_EMAIL:-}")"
-EA_PASS="${AMP_KYBER_EA_PASSWORD:-}"
-[ -n "$EA_EMAIL" ] && [ -n "$EA_PASS" ] || fail "Set the EA account email and password (Kyber > Accounts)."
+EA_TOKEN="$(trim "${AMP_KYBER_EA_TOKEN:-}")"
+[ -n "$EA_TOKEN" ] || fail "Set the EA token (Kyber > Accounts). Create one with 'kyber_cli get_ea_token'."
 TOKEN="$(trim "${AMP_KYBER_TOKEN:-}")"
 [ -n "$TOKEN" ] || fail "Set the KYBER token (Kyber > Accounts). Create one with 'kyber_cli get_token'."
 
@@ -96,8 +95,9 @@ if [ ! -f "$WINEPREFIX/system.reg" ]; then
   "$WINE" wineboot --init >/dev/null 2>&1 || warn "wineboot reported an error; continuing"
 fi
 
+# No --credentials: start_server has no EA-token option, so the EA login relies on
+# the session/licence maxima keeps from the token-based game download.
 args=(./kyber_cli start_server --show-console
-      --credentials="${EA_EMAIL}:${EA_PASS}"
       --token "$TOKEN"
       --game-path "$GAME_EXE"
       --verbose)
