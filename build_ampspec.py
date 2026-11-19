@@ -11,7 +11,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "7"
+CONFIG_VERSION = "8"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -107,9 +107,11 @@ setting("MapRotation", "rotation", "Map Rotation",
         keywords="map,rotation,mode,level")
 
 setting("UseMods", "mods", "Load Mod Collection",
-        "Loads the mod collection extracted into the `mods` folder. In the KYBER launcher: Mods > Create New Collection > "
-        "Play dropdown > Export Collection (tar), then upload and extract the tar into `mods` with the File Manager.",
-        itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_USE_MODS", keywords="mods,collection")
+        "Loads a KYBER mod collection (for example Battlefront Plus). In the KYBER launcher: Mods > create a collection > "
+        "Play dropdown > Export Collection (tar). Upload the .tar into the `mods` folder with the File Manager and restart: "
+        "it is unpacked automatically and replaces the previous collection (kept in `mods-previous`). "
+        "Players need the same collection to join.",
+        itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_USE_MODS", keywords="mods,collection,battlefront plus,modpack")
 setting("UsePlugins", "mods", "Enable Plugins Folder",
         "Uses the `plugins` folder as the KYBER plugins path. Plugins are experimental and unsupported by KYBER.",
         itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_USE_PLUGINS", keywords="plugins")
@@ -244,6 +246,8 @@ spec = {
         "logs/",
         ".kyber-tmp/",
         ".kyber-api/",
+        "mod-archives/",
+        "mods-previous/",
     ],
     "Settings": settings,
     "ConfigFileMappings": [],

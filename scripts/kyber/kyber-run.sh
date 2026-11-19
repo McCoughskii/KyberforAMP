@@ -82,10 +82,34 @@ export KYBER_LOG_LEVEL="$(trim "${AMP_KYBER_LOG_LEVEL:-info}")"
 
 unset KYBER_MOD_FOLDER KYBER_SERVER_PLUGINS_PATH
 if [ "${AMP_KYBER_USE_MODS:-false}" = "true" ]; then
-  if [ -n "$(ls -A "$BASE/mods" 2>/dev/null)" ]; then
-    export KYBER_MOD_FOLDER="$BASE/mods"; log "Loading mod collection from $KYBER_MOD_FOLDER"
+  MODS="$BASE/mods"; mkdir -p "$MODS"
+  # An uploaded launcher export (.tar/.tar.gz/.tgz/.zip) in mods/ replaces the
+  # current collection: unpack it, keep the old one in mods-previous/.
+  shopt -s nullglob nocaseglob
+  archives=("$MODS"/*.tar "$MODS"/*.tar.gz "$MODS"/*.tgz "$MODS"/*.zip)
+  shopt -u nullglob nocaseglob
+  if [ "${#archives[@]}" -gt 0 ]; then
+    newest="$(ls -t "${archives[@]}" | head -n1)"
+    log "Installing mod collection from $(basename "$newest") ..."
+    mkdir -p "$BASE/mod-archives"
+    for a in "${archives[@]}"; do mv -f "$a" "$BASE/mod-archives/"; done
+    newest="$BASE/mod-archives/$(basename "$newest")"
+    rm -rf "$BASE/mods-previous"; mv "$MODS" "$BASE/mods-previous"; mkdir -p "$MODS"
+    case "${newest,,}" in
+      *.zip) python3 -m zipfile -e "$newest" "$MODS" ;;
+      *)     tar -xf "$newest" -C "$MODS" --no-same-owner ;;
+    esac || fail "could not unpack $(basename "$newest") (the previous collection is in mods-previous)."
+    log "Mod collection unpacked; previous collection kept in mods-previous/."
+  fi
+  # kyber_cli wants a folder holding exactly one .kbcollection file plus its mods.
+  mapfile -t collections < <(find "$MODS" -maxdepth 3 -type f -iname '*.kbcollection' 2>/dev/null)
+  if [ "${#collections[@]}" -eq 1 ]; then
+    export KYBER_MOD_FOLDER="$(dirname "${collections[0]}")"
+    log "Loading mod collection $(basename "${collections[0]}" .kbcollection) ($(du -sh "$KYBER_MOD_FOLDER" 2>/dev/null | cut -f1))"
+  elif [ "${#collections[@]}" -gt 1 ]; then
+    fail "mods/ contains more than one collection: $(printf '%s ' "${collections[@]##*/}"). Keep only one."
   else
-    warn "Mods are enabled but $BASE/mods is empty. Extract your exported collection (.tar) there with the File Manager."
+    warn "Mods are enabled but no collection was found. In the KYBER launcher use Play > Export Collection (tar) and upload the .tar into the mods folder."
   fi
 fi
 if [ "${AMP_KYBER_USE_PLUGINS:-false}" = "true" ]; then

@@ -53,7 +53,7 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "7",
+    "ConfigVersion": "8",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
@@ -122,7 +122,9 @@
     "cli/",
     "logs/",
     ".kyber-tmp/",
-    ".kyber-api/"
+    ".kyber-api/",
+    "mod-archives/",
+    "mods-previous/"
   ],
   "Settings": [
     {
@@ -238,7 +240,7 @@
       "Subcategory": "category.mods:extension:4",
       "DisplayName": "setting.UseMods.name",
       "Description": "setting.UseMods.desc",
-      "Keywords": "mods,collection",
+      "Keywords": "mods,collection,battlefront plus,modpack",
       "InputType": "checkbox",
       "EnumValues": {
         "False": "setting.UseMods.value.False",
@@ -398,7 +400,7 @@
       "setting.MapRotation.name": "Map Rotation",
       "setting.MapRotation.desc": "One entry per map as `mode;map`. Paste the base64 string from the KYBER launcher (Host > NEW > add maps > Export), or type `mode;map` lines such as `PlanetaryBattles;S5_1/Levels/MP/Geonosis_01/Geonosis_01`. The launcher's JSON export also works.",
       "setting.UseMods.name": "Load Mod Collection",
-      "setting.UseMods.desc": "Loads the mod collection extracted into the `mods` folder. In the KYBER launcher: Mods > Create New Collection > Play dropdown > Export Collection (tar), then upload and extract the tar into `mods` with the File Manager.",
+      "setting.UseMods.desc": "Loads a KYBER mod collection (for example Battlefront Plus). In the KYBER launcher: Mods > create a collection > Play dropdown > Export Collection (tar). Upload the .tar into the `mods` folder with the File Manager and restart: it is unpacked automatically and replaces the previous collection (kept in `mods-previous`). Players need the same collection to join.",
       "setting.UseMods.value.False": "Disabled",
       "setting.UseMods.value.True": "Enabled",
       "setting.UsePlugins.name": "Enable Plugins Folder",
