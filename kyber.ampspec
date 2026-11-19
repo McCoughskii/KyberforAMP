@@ -55,7 +55,7 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "22",
+    "ConfigVersion": "24",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
@@ -83,7 +83,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-install.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-install.sh?cv=22",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-install.sh?cv=24",
       "UpdateSourceArgs": "kyber-install.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -92,7 +92,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-run.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-run.sh?cv=22",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-run.sh?cv=24",
       "UpdateSourceArgs": "kyber-run.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -101,7 +101,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-api.py",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-api.py?cv=22",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-api.py?cv=24",
       "UpdateSourceArgs": "kyber-api.py",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
