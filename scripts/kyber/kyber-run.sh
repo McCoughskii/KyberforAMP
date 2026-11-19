@@ -158,6 +158,23 @@ export WINEPREFIX="$HOME/.local/share/maxima/wine/prefix"
 export WINEDEBUG="${WINEDEBUG:--all}"
 export LD_LIBRARY_PATH="$RUNTIME${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 mkdir -p "$WINEPREFIX"
+WINESERVER="$BASE/wine/bin/wineserver"
+
+# The game runs under Wine as a child of kyber_cli but outlives it if kyber_cli
+# is stopped directly (AMP's Restart does that). A leftover game keeps port
+# 25200 and its KYBER registration, so close it before starting and whenever
+# kyber_cli ends. ("[i]" keeps this grep from matching its own command line.)
+game_running() { grep -qsai 'starwarsbattlefront[i]i' /proc/[0-9]*/cmdline; }
+close_game() {
+  "$WINESERVER" -k >/dev/null 2>&1
+  for _ in $(seq 1 15); do game_running || return 0; sleep 1; done
+  "$WINESERVER" -k9 >/dev/null 2>&1; sleep 2
+  ! game_running
+}
+if game_running; then
+  log "Closing a game left running by the previous start ..."
+  close_game || fail "a game from the previous start is still running. Use Stop, wait for Stopped, then Start."
+fi
 
 cp -f "$HOME/.local/share/kyber/module/vivoxsdk.dll" "$GAME_DIR/" 2>/dev/null \
   || warn "could not copy vivoxsdk.dll into the game folder (voice chat may not work)"
@@ -216,10 +233,10 @@ stop_server() {
   for _ in $(seq 1 10); do kill -0 "$kpid" 2>/dev/null || return; sleep 1; done
   # kyber_cli waits for the game; end the game (every Wine process in this prefix).
   log "Closing the game ..."
-  "$BASE/wine/bin/wineserver" -k >/dev/null 2>&1
+  "$WINESERVER" -k >/dev/null 2>&1
   for _ in $(seq 1 15); do kill -0 "$kpid" 2>/dev/null || return; sleep 1; done
   kill -TERM "$kpid" 2>/dev/null; sleep 3; kill -KILL "$kpid" 2>/dev/null
-  "$BASE/wine/bin/wineserver" -k9 >/dev/null 2>&1
+  "$WINESERVER" -k9 >/dev/null 2>&1
 }
 trap stop_server INT TERM HUP
 
@@ -258,4 +275,8 @@ else
 fi
 wait "$kpid"; rc=$?
 log "KYBER server exited with code $rc"
+if game_running; then
+  log "Closing the game ..."
+  close_game || warn "the game did not close. Use Stop, wait for Stopped, then Start."
+fi
 exit "$rc"
