@@ -11,7 +11,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "4"
+CONFIG_VERSION = "5"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -35,7 +35,7 @@ settings = []
 
 WINE_NOISE = (
     r"^(?:[0-9a-f]{4}:(?:fixme|warn|trace):.*"
-    r"|[0-9a-f]{4}:err:(?:winediag|winstation|explorer|systray|ole|wineboot|setupapi|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*"
+    r"|[0-9a-f]{4}:err:(?:winediag|winstation|explorer|systray|ole|wineboot|setupapi|console|dbghelp|ntoskrnl|vulkan|wgl|x11drv|d3d|hid):.*"
     r"|wine: (?:configuration in .* has been updated|created the configuration directory).*"
     r"|.*The explorer process failed to start.*"
     r"|Could not find Wine Gecko.*|Could not find Wine Mono.*"
@@ -161,7 +161,7 @@ spec = {
         "CommandLineArgs": "\"{{$FullRootDir}}scripts/kyber-run.sh\" \"{{$FullBaseDir}}\"",
         "CommandLineParameterFormat": "",
         "CommandLineParameterDelimiter": "",
-        "ApplicationReadyMode": "Immediate",
+        "ApplicationReadyMode": "RegexMatch",
         "ExitMethod": "OS_CLOSE",
         "ExitTimeout": "30",
         "ExitString": "",
@@ -193,7 +193,8 @@ spec = {
         # Wine prints harmless noise when it runs without a display (no explorer
         # window, no desktop, unimplemented stubs). Hide it; real errors still show.
         "ThrowawayMessageRegex": WINE_NOISE,
-        "AppReadyRegex": "^$",
+        # Printed by the KYBER module once the first map of the rotation is up.
+        "AppReadyRegex": r"^.*\[KYBER\] \[info\] \[Server\] Server level loaded.*$",
         "UserJoinRegex": "^$",
         "UserLeaveRegex": "^$",
         "UserChatRegex": "^$",
