@@ -11,7 +11,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 REPO_RAW = "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main"
-CONFIG_VERSION = "12"
+CONFIG_VERSION = "13"
 
 CAT = "category.kyber:rocket_launch"
 SUB = {
@@ -72,10 +72,12 @@ def setting(field, sub, name, desc, itype="text", default="", env_name=None, enu
 
 BOOL = {"False": "Disabled", "True": "Enabled"}
 
-setting("EAToken", "accounts", "EA Token",
-        "EA auth token for the account that owns Star Wars Battlefront II. Used to log in to EA and to download the game. "
-        "Create one with `kyber_cli get_ea_token`. EA tokens expire: when the server stops logging in, paste a fresh one.",
-        itype="Password", env_name="AMP_KYBER_EA_TOKEN", keywords="ea,token,login,maxima,download")
+setting("EAEmail", "accounts", "EA Email",
+        "Email address (or EA ID) of the EA account that owns Star Wars Battlefront II. The server logs in to EA with it on every start.",
+        env_name="AMP_KYBER_EA_EMAIL", keywords="ea,email,login,account,maxima,credentials")
+setting("EAPassword", "accounts", "EA Password",
+        "Password of that EA account. Accounts with two-factor sign-in may need it turned off for the server to log in.",
+        itype="Password", env_name="AMP_KYBER_EA_PASSWORD", keywords="ea,password,login,account,maxima,credentials")
 setting("KyberToken", "accounts", "KYBER Token",
         "Your KYBER API token. Create it once with `kyber_cli get_token` (KYBER launcher or CLI on any PC). It does not expire.",
         itype="Password", env_name="AMP_KYBER_TOKEN", keywords="kyber,token,api,auth")
@@ -115,6 +117,10 @@ setting("UsePlugins", "mods", "Enable Plugins Folder",
         "Uses the `plugins` folder as the KYBER plugins path. Plugins are experimental and unsupported by KYBER.",
         itype="checkbox", default="false", enum=BOOL, env_name="AMP_KYBER_USE_PLUGINS", keywords="plugins")
 
+setting("EAToken", "game", "EA Token (game download only)",
+        "Only needed to download or verify the game files on Update. Create one with `kyber_cli get_ea_token`; "
+        "EA tokens expire quickly, so paste a fresh one right before updating. The server itself logs in with the EA email and password.",
+        itype="Password", env_name="AMP_KYBER_EA_TOKEN", keywords="ea,token,download,verify")
 setting("GameDir", "game", "Game Directory",
         "Folder holding starwarsbattlefrontii.exe, as seen inside the shard. Leave blank for the `battlefront` folder of this server.",
         env_name="AMP_KYBER_GAME_DIR", keywords="game,path,directory,install")
@@ -128,7 +134,7 @@ setting("ModuleChannel", "advanced", "KYBER Module Channel", "Release channel of
         enum={"default": "Default", "stable": "stable", "custom": "Custom (set below)"})
 setting("ModuleChannelCustom", "advanced", "Custom Module Channel", "Used when the channel above is Custom, e.g. `ver/beta10`.",
         env_name="AMP_KYBER_MODULE_CHANNEL_CUSTOM", keywords="module,channel,version", Placeholder="ver/beta10")
-setting("LogLevel", "advanced", "Log Level", "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose, which prints your KYBER token in the console.",
+setting("LogLevel", "advanced", "Log Level", "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose, which prints your EA password and KYBER token in the console.",
         itype="enum", default="info", env_name="AMP_KYBER_LOG_LEVEL", keywords="log,debug,trace",
         enum={"info": "info", "debug": "debug", "trace": "trace"})
 setting("MaximaDebug", "advanced", "Maxima Debug Output", "Adds --debug to kyber_cli for troubleshooting EA login problems.",

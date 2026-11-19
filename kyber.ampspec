@@ -24,7 +24,8 @@
     "AdminMethod": "STDIO",
     "RCONHeartbeatCommand": "",
     "EnvironmentVariables": {
-      "AMP_KYBER_EA_TOKEN": "{{EAToken}}",
+      "AMP_KYBER_EA_EMAIL": "{{EAEmail}}",
+      "AMP_KYBER_EA_PASSWORD": "{{EAPassword}}",
       "AMP_KYBER_TOKEN": "{{KyberToken}}",
       "AMP_KYBER_SERVER_NAME": "{{ServerName}}",
       "AMP_KYBER_SERVER_DESCRIPTION": "{{ServerDescription}}",
@@ -35,6 +36,7 @@
       "AMP_KYBER_MAP_ROTATION": "{{MapRotation}}",
       "AMP_KYBER_USE_MODS": "{{UseMods}}",
       "AMP_KYBER_USE_PLUGINS": "{{UsePlugins}}",
+      "AMP_KYBER_EA_TOKEN": "{{EAToken}}",
       "AMP_KYBER_GAME_DIR": "{{GameDir}}",
       "AMP_KYBER_MODULE_CHANNEL": "{{ModuleChannel}}",
       "AMP_KYBER_MODULE_CHANNEL_CUSTOM": "{{ModuleChannelCustom}}",
@@ -53,7 +55,7 @@
     "OS": "Linux",
     "AarchSupport": "NotSupported",
     "ExtraSetupStepsURI": "https://docs.kyber.gg/g/hosting/dedicated-servers/config",
-    "ConfigVersion": "12",
+    "ConfigVersion": "13",
     "MinAMPVersion": "2.6.0.0"
   },
   "Console": {
@@ -81,7 +83,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-install.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-install.sh?cv=12",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-install.sh?cv=13",
       "UpdateSourceArgs": "kyber-install.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -90,7 +92,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-run.sh",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-run.sh?cv=12",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-run.sh?cv=13",
       "UpdateSourceArgs": "kyber-run.sh",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -99,7 +101,7 @@
       "UpdateSource": "FetchURL",
       "UpdateStageName": "Download kyber-api.py",
       "UpdateSourcePlatform": "Linux",
-      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-api.py?cv=12",
+      "UpdateSourceData": "https://raw.githubusercontent.com/McCoughskii/KyberforAMP/main/scripts/kyber/kyber-api.py?cv=13",
       "UpdateSourceArgs": "kyber-api.py",
       "UpdateSourceTarget": "{{$FullRootDir}}scripts",
       "OverwriteExistingFiles": true
@@ -128,14 +130,25 @@
   ],
   "Settings": [
     {
-      "FieldName": "EAToken",
-      "ParamFieldName": "EAToken",
+      "FieldName": "EAEmail",
+      "ParamFieldName": "EAEmail",
       "DefaultValue": "",
       "Category": "category.kyber:rocket_launch",
       "Subcategory": "category.accounts:key:1",
-      "DisplayName": "setting.EAToken.name",
-      "Description": "setting.EAToken.desc",
-      "Keywords": "ea,token,login,maxima,download",
+      "DisplayName": "setting.EAEmail.name",
+      "Description": "setting.EAEmail.desc",
+      "Keywords": "ea,email,login,account,maxima,credentials",
+      "InputType": "text"
+    },
+    {
+      "FieldName": "EAPassword",
+      "ParamFieldName": "EAPassword",
+      "DefaultValue": "",
+      "Category": "category.kyber:rocket_launch",
+      "Subcategory": "category.accounts:key:1",
+      "DisplayName": "setting.EAPassword.name",
+      "Description": "setting.EAPassword.desc",
+      "Keywords": "ea,password,login,account,maxima,credentials",
       "InputType": "Password"
     },
     {
@@ -261,6 +274,17 @@
         "False": "setting.UsePlugins.value.False",
         "True": "setting.UsePlugins.value.True"
       }
+    },
+    {
+      "FieldName": "EAToken",
+      "ParamFieldName": "EAToken",
+      "DefaultValue": "",
+      "Category": "category.kyber:rocket_launch",
+      "Subcategory": "category.game:download:5",
+      "DisplayName": "setting.EAToken.name",
+      "Description": "setting.EAToken.desc",
+      "Keywords": "ea,token,download,verify",
+      "InputType": "Password"
     },
     {
       "FieldName": "GameDir",
@@ -394,8 +418,10 @@
       "category.mods": "Mods & Plugins",
       "category.game": "Game Files",
       "category.advanced": "Advanced",
-      "setting.EAToken.name": "EA Token",
-      "setting.EAToken.desc": "EA auth token for the account that owns Star Wars Battlefront II. Used to log in to EA and to download the game. Create one with `kyber_cli get_ea_token`. EA tokens expire: when the server stops logging in, paste a fresh one.",
+      "setting.EAEmail.name": "EA Email",
+      "setting.EAEmail.desc": "Email address (or EA ID) of the EA account that owns Star Wars Battlefront II. The server logs in to EA with it on every start.",
+      "setting.EAPassword.name": "EA Password",
+      "setting.EAPassword.desc": "Password of that EA account. Accounts with two-factor sign-in may need it turned off for the server to log in.",
       "setting.KyberToken.name": "KYBER Token",
       "setting.KyberToken.desc": "Your KYBER API token. Create it once with `kyber_cli get_token` (KYBER launcher or CLI on any PC). It does not expire.",
       "setting.ServerName.name": "Server Name",
@@ -422,6 +448,8 @@
       "setting.UsePlugins.desc": "Uses the `plugins` folder as the KYBER plugins path. Plugins are experimental and unsupported by KYBER.",
       "setting.UsePlugins.value.False": "Disabled",
       "setting.UsePlugins.value.True": "Enabled",
+      "setting.EAToken.name": "EA Token (game download only)",
+      "setting.EAToken.desc": "Only needed to download or verify the game files on Update. Create one with `kyber_cli get_ea_token`; EA tokens expire quickly, so paste a fresh one right before updating. The server itself logs in with the EA email and password.",
       "setting.GameDir.name": "Game Directory",
       "setting.GameDir.desc": "Folder holding starwarsbattlefrontii.exe, as seen inside the shard. Leave blank for the `battlefront` folder of this server.",
       "setting.VerifyGame.name": "Verify Game Files on Update",
@@ -436,7 +464,7 @@
       "setting.ModuleChannelCustom.name": "Custom Module Channel",
       "setting.ModuleChannelCustom.desc": "Used when the channel above is Custom, e.g. `ver/beta10`.",
       "setting.LogLevel.name": "Log Level",
-      "setting.LogLevel.desc": "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose, which prints your KYBER token in the console.",
+      "setting.LogLevel.desc": "KYBER log verbosity. debug and trace also turn on kyber_cli --verbose, which prints your EA password and KYBER token in the console.",
       "setting.LogLevel.value.info": "info",
       "setting.LogLevel.value.debug": "debug",
       "setting.LogLevel.value.trace": "trace",

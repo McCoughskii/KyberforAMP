@@ -23,11 +23,17 @@ WINE="$BASE/wine/bin/wine64"
 
 GAME_DIR="$(trim "${AMP_KYBER_GAME_DIR:-}")"; [ -z "$GAME_DIR" ] && GAME_DIR="$BASE/battlefront"
 GAME_EXE="$(find "$GAME_DIR" -maxdepth 1 -iname 'starwarsbattlefrontii.exe' 2>/dev/null | head -n1)"
-[ -n "$GAME_EXE" ] || fail "starwarsbattlefrontii.exe not found in $GAME_DIR. Set 'EA Token (game download)' and run Update, or upload the game there."
+[ -n "$GAME_EXE" ] || fail "starwarsbattlefrontii.exe not found in $GAME_DIR. Set 'EA Token (game download only)' and run Update, or upload the game there."
 
 # ---------- accounts ----------
+# The server logs in to EA with the account's email (or EA ID) and password,
+# like the official image's MAXIMA_CREDENTIALS, so it does not depend on a
+# saved maxima session or an EA token that expires.
+EA_USER="$(trim "${AMP_KYBER_EA_EMAIL:-}")"
+EA_PASS="${AMP_KYBER_EA_PASSWORD:-}"
+[ -n "$EA_USER" ] && [ -n "$EA_PASS" ] || fail "Set the EA email and EA password (Kyber > Accounts) for the account that owns Star Wars Battlefront II."
+[[ "$EA_USER" == *:* ]] && fail "The EA email/EA ID cannot contain ':'."
 EA_TOKEN="$(trim "${AMP_KYBER_EA_TOKEN:-}")"
-[ -n "$EA_TOKEN" ] || fail "Set the EA token (Kyber > Accounts). Create one with 'kyber_cli get_ea_token'."
 TOKEN="$(trim "${AMP_KYBER_TOKEN:-}")"
 [ -n "$TOKEN" ] || fail "Set the KYBER token (Kyber > Accounts). Create one with 'kyber_cli get_token'."
 
@@ -134,12 +140,11 @@ for view in 64 32; do
 done
 log "Registered game install: $WIN_GAME_DIR"
 
-# No --credentials: start_server has no EA-token option, so the EA login relies on
-# the session/licence maxima keeps from the token-based game download.
 args=(./kyber_cli start_server --show-console
+      --credentials="$EA_USER:$EA_PASS"
       --token "$TOKEN"
       --game-path "$GAME_EXE")
-# --verbose echoes every argument, KYBER token included, so only use it when asked.
+# --verbose echoes every argument, EA password and KYBER token included, so only use it when asked.
 case "$KYBER_LOG_LEVEL" in debug|trace) args+=(--verbose) ;; esac
 is_true "${AMP_KYBER_MAXIMA_DEBUG:-}" && args+=(--debug)
 
